@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "magicdonut",
+  "version": "${version}",
+  "name": "MagicDonut",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/magicdonut/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "de.magicclutch.magicdonut.client.MagicdonutDataGenerator"
+    ],
+    "client": [
+      "de.magicclutch.magicdonut.client.MagicdonutClient"
+    ],
+    "main": [
+      "de.magicclutch.magicdonut.Magicdonut"
+    ]
+  },
+  "mixins": [
+    "magicdonut.mixins.json",
+    {
+      "config": "magicdonut.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
