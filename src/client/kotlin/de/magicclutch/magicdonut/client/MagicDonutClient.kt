@@ -2,8 +2,8 @@ package de.magicclutch.magicdonut.client
 
 import net.fabricmc.api.ClientModInitializer
 
-class MagicdonutClient : ClientModInitializer {
-
+class MagicDonutClient : ClientModInitializer {
     override fun onInitializeClient() {
+
     }
 }

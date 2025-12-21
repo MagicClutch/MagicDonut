@@ -11,13 +11,13 @@
   "environment": "client",
   "entrypoints": {
     "fabric-datagen": [
-      "de.magicclutch.magicdonut.client.MagicdonutDataGenerator"
+      "de.magicclutch.magicdonut.client.MagicDonutDataGenerator"
     ],
     "client": [
-      "de.magicclutch.magicdonut.client.MagicdonutClient"
+      "de.magicclutch.magicdonut.client.MagicDonutClient"
     ],
     "main": [
-      "de.magicclutch.magicdonut.Magicdonut"
+      "de.magicclutch.magicdonut.MagicDonut"
     ]
   },
   "mixins": [
