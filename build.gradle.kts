@@ -41,27 +41,51 @@ fabricApi {
 }
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") {
+        name = "DevAuth"
+        content {
+            includeGroup("me.djtheredstoner")
+        }
+    }
+
+    maven("https://maven.isxander.dev/releases") {
+        name = "Xander Maven"
+        content {
+            includeGroup("dev.isxander")
+            includeGroup("org.quiltmc.parsers")
+        }
+    }
+
+    maven("https://maven.terraformersmc.com/releases/") {
+        name = "Terraformers"
+        content {
+            includeGroup("com.terraformersmc")
+        }
+    }
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
+    // Minecraft and Fabric
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
     modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
-
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+
+    // Config
+    modImplementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
+    modCompileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+
+    // Dev Authentication to be able to test the mod on DonutSMP
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
 }
 
 tasks.processResources {
     inputs.property("version", project.version)
     inputs.property("minecraft_version", project.property("minecraft_version"))
     inputs.property("loader_version", project.property("loader_version"))
+    inputs.property("yacl_version", project.property("yacl_version"))
+    inputs.property("modmenu_version", project.property("modmenu_version"))
     filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
@@ -69,7 +93,9 @@ tasks.processResources {
             "version" to project.version,
             "minecraft_version" to project.property("minecraft_version")!!,
             "loader_version" to project.property("loader_version")!!,
-            "kotlin_loader_version" to project.property("kotlin_loader_version")!!
+            "kotlin_loader_version" to project.property("kotlin_loader_version")!!,
+            "yacl_version" to project.property("yacl_version")!!,
+            "modmenu_version" to project.property("modmenu_version")!!
         )
     }
 }

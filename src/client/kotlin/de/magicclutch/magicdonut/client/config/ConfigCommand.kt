@@ -1,0 +1,31 @@
+package de.magicclutch.magicdonut.client.config
+
+import com.mojang.brigadier.CommandDispatcher
+import de.magicclutch.magicdonut.client.service.MinecraftClientService
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
+
+class ConfigCommand {
+    companion object {
+        fun registerCommands(
+            dispatcher: CommandDispatcher<FabricClientCommandSource>
+        ) {
+            dispatcher.register(
+                ClientCommandManager.literal("magicdonut")
+                    .executes { _ ->
+                        val client = MinecraftClientService.client
+                        val currentScreen = client.screen
+
+                        if (currentScreen != null) {
+                            client.schedule {
+                                client.setScreen(
+                                    MagicDonutConfig.createGUI(currentScreen)
+                                )
+                            }
+                        }
+                        1
+                    }
+            )
+        }
+    }
+}
