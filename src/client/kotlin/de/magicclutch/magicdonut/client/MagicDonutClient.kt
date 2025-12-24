@@ -2,6 +2,7 @@ package de.magicclutch.magicdonut.client
 
 import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
@@ -12,8 +13,13 @@ import net.minecraft.network.chat.Component
 class MagicDonutClient : ClientModInitializer {
     override fun onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ -> ConfigCommand.registerCommands(dispatcher) }
+
         ClientReceiveMessageEvents.GAME.register { component, _ ->
             val content = component.string
+
+            if(!MagicDonutConfig.instance.developmentConfig.apiKey.isBlank() || !MinecraftClientService.isOnDonut) {
+                return@register
+            }
 
             val matcher = APIService.apiTokenPattern.matcher(content)
             if(matcher.find()) {
@@ -27,5 +33,7 @@ class MagicDonutClient : ClientModInitializer {
                 )
             }
         }
+
+        StatsRenderer().init()
     }
 }
