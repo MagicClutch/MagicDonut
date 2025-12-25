@@ -10,68 +10,132 @@ import net.minecraft.client.gui.Font.DisplayMode
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class StatsRenderer {
+
     private val executor = Executors.newFixedThreadPool(2)
+
+    private val lastUpdateTimes = ConcurrentHashMap<String, Long>()
+    private val normalUpdateInterval = 10_000L // 10s
+    private val fastUpdateInterval = 2_000L // 2s
+    private val maxRequestsPerMinute = 100
+    private val requestCounter = AtomicInteger(0)
+    private var lastCounterReset = System.currentTimeMillis()
 
     fun init() {
         WorldRenderEvents.AFTER_ENTITIES.register { context ->
-            val minecraft = MinecraftClientService.client
-            val camera = minecraft.gameRenderer.mainCamera
+            val mc = MinecraftClientService.client
+            val camera = mc.gameRenderer.mainCamera
             val matrices = context.matrices()
             val consumers = context.consumers()
+            val players = mc.level?.players() ?: return@register
+            val tick = mc.deltaTracker.gameTimeDeltaTicks
 
-            for (player in minecraft.level?.players() ?: return@register) {
-                if (player == minecraft.player) continue
+            // Reset rate limit jede Minute
+            val now = System.currentTimeMillis()
+            if (now - lastCounterReset >= 60_000) {
+                requestCounter.set(0)
+                lastCounterReset = now
+            }
 
-                render(player, matrices, consumers, camera.position)
+            // Zähle Spieler auf 0,0 Koordinaten
+            val playersOnZero = players.count { it.x.toInt() == 0 && it.z.toInt() == 0 }
+
+            for (player in players) {
+                if (player == mc.player) continue
+                val name = player.gameProfile.name
+
+                // Skip wenn >2 Spieler auf 0,0 und der Spieler auch dort ist
+                if (playersOnZero > 2 && player.x.toInt() == 0 && player.z.toInt() == 0) continue
+
+                val lastUpdate = lastUpdateTimes.getOrDefault(name, 0L)
+                val interval = if (players.size < 5) fastUpdateInterval else normalUpdateInterval
+
+                // Rate-Limit: max 100 Anfragen / Minute
+                if (now - lastUpdate > interval && requestCounter.get() < maxRequestsPerMinute) {
+                    lastUpdateTimes[name] = now
+                    requestCounter.incrementAndGet()
+
+                    executor.submit {
+                        StatsCache[name].apply {
+                            loading = true
+                            data = APIService.getStats(name)
+                            loading = false
+                        }
+                    }
+                }
+
+                render(player, matrices, consumers, camera.position, tick)
             }
         }
     }
+
 
     private fun render(
         player: Player,
         matrices: PoseStack,
         consumers: MultiBufferSource,
-        cameraPos: Vec3
+        cameraPos: Vec3,
+        tickDelta: Float
     ) {
-        val minecraft = MinecraftClientService.client
+        val mc = MinecraftClientService.client
+        val camera = mc.entityRenderDispatcher.camera ?: return
+        val font = mc.font
+
+        //like vanilla nametag
+        if (player.isCrouching) return
+        if (player.isInvisibleTo(mc.player)) return
 
         val name = player.gameProfile.name
-        val entry = StatsCache[name]
+        if (name.length < 3) return
 
+        val entry = StatsCache[name]
         if (entry.data == null && !entry.loading) {
-            StatsCache[name].loading = true
+            entry.loading = true
             executor.submit {
-                val stats = APIService.getStats(name)
-                StatsCache[name].data = stats
-                StatsCache[name].loading = false
+                entry.data = APIService.getStats(name)
+                entry.loading = false
             }
         }
 
-        val text = extractTextFromData(entry.data)
+        val moneyText = extractTextFromData(entry.data)
+
+        val tick = tickDelta
+
+        val x = player.xo + (player.x - player.xo) * tick
+        val y = player.yo + (player.y - player.yo) * tick
+        val z = player.zo + (player.z - player.zo) * tick
+
+        val renderY = y + player.bbHeight + 0.48
 
         matrices.pushPose()
         matrices.translate(
-            player.x - cameraPos.x,
-            player.y - cameraPos.y + player.bbHeight + 0.75,
-            player.z - cameraPos.z
+            x - cameraPos.x,
+            renderY - cameraPos.y,
+            z - cameraPos.z
         )
 
-        matrices.mulPose(Axis.YP.rotationDegrees(-minecraft.entityRenderDispatcher.camera!!.yRot))
-        matrices.mulPose(Axis.XP.rotationDegrees(minecraft.entityRenderDispatcher.camera!!.xRot))
 
+        matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot))
+        matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot))
         matrices.scale(-0.025f, -0.025f, 0.025f)
 
-        val textRenderer = minecraft.font
-        val width = textRenderer.width(text) / 2
+        // ---------- MONEY ONLY ----------
+        matrices.pushPose()
+        matrices.translate(0.0, 9.0, 0.0)
+        matrices.scale(0.5f, 0.5f, 0.5f)
 
-        textRenderer.drawInBatch(
-            text,
-            (-width).toFloat(),
+        val moneyWidth = font.width(moneyText) / 2f
+        val moneyColor = 0xFF00FC00.toInt()
+
+        font.drawInBatch(
+            moneyText,
+            -moneyWidth,
             0f,
-            0xFFFFFFFF.toInt(),
+            moneyColor,
             false,
             matrices.last().pose(),
             consumers,
@@ -80,10 +144,27 @@ class StatsRenderer {
             15728880
         )
 
+
+
+        matrices.popPose()
         matrices.popPose()
     }
 
     private fun extractTextFromData(data: JsonObject?): String {
-        return data?.getAsJsonPrimitive("money")?.asString?.let { "§a$it" } ?: "Loading..."
+        val money = data?.getAsJsonPrimitive("money")
+            ?.runCatching { asFloat }
+            ?.getOrDefault(0f)
+            ?: return "§7Loading..."
+
+        return "§a${formatMoney(money)}"
+    }
+
+    private fun formatMoney(value: Float): String {
+        return when {
+            value >= 1_000_000_000 -> String.format("%.2fB$", value / 1_000_000_000.0)
+            value >= 1_000_000 -> String.format("%.2fM$", value / 1_000_000.0)
+            value >= 1_000 -> String.format("%.2fK$", value / 1_000.0)
+            else -> String.format("%.2f$", value)
+        }
     }
 }
