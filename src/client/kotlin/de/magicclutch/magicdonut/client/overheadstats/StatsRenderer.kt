@@ -5,8 +5,9 @@ import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.math.Axis
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents
 import net.minecraft.client.gui.Font.DisplayMode
+import net.minecraft.client.player.AbstractClientPlayer
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
@@ -15,7 +16,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 class StatsRenderer {
-
     private val executor = Executors.newFixedThreadPool(2)
 
     private val lastUpdateTimes = ConcurrentHashMap<String, Long>()
@@ -27,87 +27,107 @@ class StatsRenderer {
 
     fun init() {
         WorldRenderEvents.AFTER_ENTITIES.register { context ->
-            val mc = MinecraftClientService.client
-            val camera = mc.gameRenderer.mainCamera
-            val matrices = context.matrices()
-            val consumers = context.consumers()
-            val players = mc.level?.players() ?: return@register
-            val tick = mc.deltaTracker.gameTimeDeltaTicks
+            if(!MinecraftClientService.isOnDonut) return@register
 
-            // Reset rate limit jede Minute
-            val now = System.currentTimeMillis()
-            if (now - lastCounterReset >= 60_000) {
-                requestCounter.set(0)
-                lastCounterReset = now
-            }
-
-            // Zähle Spieler auf 0,0 Koordinaten
-            val playersOnZero = players.count { it.x.toInt() == 0 && it.z.toInt() == 0 }
+            val minecraft = MinecraftClientService.client
+            val camera = minecraft.gameRenderer.mainCamera
+            val players = minecraft.level?.players() ?: return@register
+            val tickDelta = context.tickCounter().getGameTimeDeltaPartialTick(true)
 
             for (player in players) {
-                if (player == mc.player) continue
-                val name = player.gameProfile.name
-
-                // Skip wenn >2 Spieler auf 0,0 und der Spieler auch dort ist
-                if (playersOnZero > 2 && player.x.toInt() == 0 && player.z.toInt() == 0) continue
-
-                val lastUpdate = lastUpdateTimes.getOrDefault(name, 0L)
-                val interval = if (players.size < 5) fastUpdateInterval else normalUpdateInterval
-
-                // Rate-Limit: max 100 Anfragen / Minute
-                if (now - lastUpdate > interval && requestCounter.get() < maxRequestsPerMinute) {
-                    lastUpdateTimes[name] = now
-                    requestCounter.incrementAndGet()
-
-                    executor.submit {
-                        StatsCache[name].apply {
-                            loading = true
-                            data = APIService.getStats(name)
-                            loading = false
-                        }
-                    }
-                }
-
-                render(player, matrices, consumers, camera.position, tick)
+                handlePlayer(player, context.matrixStack()!!, context.consumers()!!, camera.position, tickDelta, players)
             }
         }
     }
 
-
-    private fun render(
+    private fun handlePlayer(
         player: Player,
         matrices: PoseStack,
         consumers: MultiBufferSource,
         cameraPos: Vec3,
         tickDelta: Float
     ) {
-        val mc = MinecraftClientService.client
-        val camera = mc.entityRenderDispatcher.camera ?: return
-        val font = mc.font
+        val name = player.gameProfile.name
+
+        if(!checkRenderAllowed(player, players)) return
+
+        checkApiCache(player, players)
+
+        val text = extractTextFromData(StatsCache[name].data)
+
+        renderStatsDisplay(
+            player,
+            matrices,
+            consumers,
+            cameraPos,
+            tickDelta,
+            text
+        )
+    }
+
+    private fun checkRenderAllowed(player: Player, players: List<AbstractClientPlayer>): Boolean {
+        val minecraft = MinecraftClientService.client
+
+        if (player == minecraft.player) return false
 
         //like vanilla nametag
-        if (player.isCrouching) return
-        if (player.isInvisibleTo(mc.player)) return
+        if (player.isCrouching) return false
+        if (player.isInvisibleTo(minecraft.player!!)) return false
 
         val name = player.gameProfile.name
-        if (name.length < 3) return
+        if (name.length < 3) return false
 
-        val entry = StatsCache[name]
-        if (entry.data == null && !entry.loading) {
-            entry.loading = true
-            executor.submit {
-                entry.data = APIService.getStats(name)
-                entry.loading = false
-            }
+        // Skip wenn >2 Spieler auf 0,0 und der Spieler auch dort ist
+        val playersOnZero = players.count { it.x.toInt() == 0 && it.z.toInt() == 0 }
+        if (playersOnZero > 2 && player.x.toInt() == 0 && player.z.toInt() == 0) return false
+
+        return true
+    }
+
+    private fun checkApiCache(player: Player, players: List<AbstractClientPlayer>) {
+        val name = player.gameProfile.name
+
+        val lastUpdate = lastUpdateTimes.getOrDefault(name, 0L)
+        val interval = if (players.size < 5) fastUpdateInterval else normalUpdateInterval
+
+        // Reset rate limit every minute
+        val now = System.currentTimeMillis()
+        if (now - lastCounterReset >= 60_000) {
+            requestCounter.set(0)
+            lastCounterReset = now
         }
 
-        val moneyText = extractTextFromData(entry.data)
+        // Rate-Limit: max 100 Anfragen / Minute
+        if (now - lastUpdate > interval && requestCounter.get() < maxRequestsPerMinute) {
+            lastUpdateTimes[name] = now
+            requestCounter.incrementAndGet()
 
-        val tick = tickDelta
+            executor.submit {
+                StatsCache[name].apply {
+                    loading = true
+                    data = APIService.getStats(name)
+                    loading = false
+                }
+            }
+        }
+    }
 
-        val x = player.xo + (player.x - player.xo) * tick
-        val y = player.yo + (player.y - player.yo) * tick
-        val z = player.zo + (player.z - player.zo) * tick
+    private fun renderStatsDisplay(
+        player: Player,
+        matrices: PoseStack,
+        consumers: MultiBufferSource,
+        cameraPos: Vec3,
+        tickDelta: Float,
+        text: String
+    ) {
+        val minecraft = MinecraftClientService.client
+
+        val camera = minecraft.entityRenderDispatcher.camera ?: return
+        val font = minecraft.font
+
+        val x = player.xOld + (player.x - player.xOld) * tickDelta
+        val y = player.yOld + (player.y - player.yOld) * tickDelta
+        val z = player.zOld + (player.z - player.zOld) * tickDelta
 
         val renderY = y + player.bbHeight + 0.48
 
@@ -118,7 +138,6 @@ class StatsRenderer {
             z - cameraPos.z
         )
 
-
         matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot))
         matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot))
         matrices.scale(-0.025f, -0.025f, 0.025f)
@@ -128,14 +147,14 @@ class StatsRenderer {
         matrices.translate(0.0, 9.0, 0.0)
         matrices.scale(0.5f, 0.5f, 0.5f)
 
-        val moneyWidth = font.width(moneyText) / 2f
-        val moneyColor = 0xFF00FC00.toInt()
+        val width = font.width(text) / 2f
+        val color = 0xFF00FC00.toInt()
 
         font.drawInBatch(
-            moneyText,
-            -moneyWidth,
+            text,
+            -width,
             0f,
-            moneyColor,
+            color,
             false,
             matrices.last().pose(),
             consumers,
@@ -143,8 +162,6 @@ class StatsRenderer {
             0,
             15728880
         )
-
-
 
         matrices.popPose()
         matrices.popPose()
