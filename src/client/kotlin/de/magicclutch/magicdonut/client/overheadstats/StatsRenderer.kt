@@ -45,7 +45,8 @@ class StatsRenderer {
         matrices: PoseStack,
         consumers: MultiBufferSource,
         cameraPos: Vec3,
-        tickDelta: Float
+        tickDelta: Float,
+        players: List<AbstractClientPlayer>
     ) {
         val name = player.gameProfile.name
 
@@ -129,7 +130,7 @@ class StatsRenderer {
         val y = player.yOld + (player.y - player.yOld) * tickDelta
         val z = player.zOld + (player.z - player.zOld) * tickDelta
 
-        val renderY = y + player.bbHeight + 0.48
+        val renderY = y + player.bbHeight + 0.52
 
         matrices.pushPose()
         matrices.translate(
