@@ -2,7 +2,9 @@ package de.magicclutch.magicdonut.client.config
 
 import com.google.gson.GsonBuilder
 import de.magicclutch.magicdonut.client.config.category.DevelopmentCategory
+import de.magicclutch.magicdonut.client.config.category.PayConfirmCategory
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
+import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
 import dev.isxander.yacl3.api.YetAnotherConfigLib
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler
 import dev.isxander.yacl3.config.v2.api.SerialEntry
@@ -39,10 +41,14 @@ class MagicDonutConfig {
             ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->
                 builder.title(Component.literal("MagicDonut Config"))
                     .category(DevelopmentCategory.create(defaults, config))
+                    .category(PayConfirmCategory.create(defaults, config)) // Fügt den Pay-Confirm Reiter hinzu
             }.generateScreen(parent)
         }
     }
 
     @SerialEntry
     var developmentConfig: DevelopmentConfig = DevelopmentConfig()
+
+    @SerialEntry
+    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig() // Muss var sein für die Serialisierung
 }

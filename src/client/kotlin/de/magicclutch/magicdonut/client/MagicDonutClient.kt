@@ -3,6 +3,7 @@ package de.magicclutch.magicdonut.client
 import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
+import de.magicclutch.magicdonut.client.payconfirm.PayConfirmClient
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
@@ -35,5 +36,6 @@ class MagicDonutClient : ClientModInitializer {
         }
 
         StatsRenderer().init()
+        PayConfirmClient.init()
     }
 }
