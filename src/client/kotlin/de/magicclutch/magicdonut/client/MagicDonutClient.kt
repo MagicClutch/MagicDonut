@@ -1,5 +1,6 @@
 package de.magicclutch.magicdonut.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
@@ -8,8 +9,11 @@ import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.minecraft.client.KeyMapping
 import net.minecraft.network.chat.Component
+import org.lwjgl.glfw.GLFW
 
 class MagicDonutClient : ClientModInitializer {
     override fun onInitializeClient() {
@@ -18,7 +22,7 @@ class MagicDonutClient : ClientModInitializer {
         ClientReceiveMessageEvents.GAME.register { component, _ ->
             val content = component.string
 
-            if(!MagicDonutConfig.instance.developmentConfig.apiKey.isBlank() || !MinecraftClientService.isOnDonut) {
+            if(MagicDonutConfig.instance.developmentConfig.apiKey.isNotBlank() || !MinecraftClientService.isOnDonut) {
                 return@register
             }
 
@@ -30,12 +34,24 @@ class MagicDonutClient : ClientModInitializer {
                 println("API Key $apiKey saved.")
                 MinecraftClientService.client.player
                 MinecraftClientService.sendChatMessage(
-                    Component.literal("§a[MagicDonut] API-Key saved ✓")
+                    Component.literal("§a[MagicDonutUtils] API-Key saved ✓")
                 )
             }
         }
 
         StatsRenderer().init()
         PayConfirmClient.init()
+    }
+
+    companion object {
+        private val category = "MagicDonut"
+        val payButtonBinding: KeyMapping = KeyBindingHelper.registerKeyBinding(
+            KeyMapping(
+                "magicdonut.quickpay",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_LEFT_CONTROL,
+                category
+            )
+        )
     }
 }

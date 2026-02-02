@@ -2,16 +2,22 @@ package de.magicclutch.magicdonut.client.payconfirm
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
+import de.magicclutch.magicdonut.client.MagicDonutClient
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
+import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.network.chat.TextColor
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.entity.player.Player
 import java.util.*
 
 object PayConfirmClient {
@@ -21,51 +27,15 @@ object PayConfirmClient {
     fun init() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
 
-            // Main Command: /pay
             dispatcher.register(
                 ClientCommandManager.literal("pay")
                     .executes { context ->
-                        val nearby = findNearbyPlayer()
-                        val msg = if (nearby != null) "§eNutze: /pay $nearby <menge>" else "§cSyntax: /pay <spieler> <menge>"
+
+                        val msg = "§cSyntax: /pay <player> <amount>"
                         context.source.sendFeedback(Component.literal(msg))
                         Command.SINGLE_SUCCESS
                     }
                     .then(ClientCommandManager.argument("target", StringArgumentType.word())
-                        // START TAB-COMPLETION FIX
-                        .suggests { context, builder ->
-                            val client = Minecraft.getInstance()
-                            val player = client.player
-                            val level = client.level
-
-                            val suggestions = if (level != null && player != null) {
-                                // 1. Suche Spieler in der Nähe (Renderdistanz)
-                                val nearbyPlayers = level.players()
-                                    .filter { it != player && it.isAlive }
-                                    .sortedBy { it.distanceToSqr(player) } // Der Nächste zuerst
-                                    .map { it.gameProfile.name }
-
-                                // 2. Falls leer, nimm alle Online-Spieler
-                                if (nearbyPlayers.isEmpty()) {
-                                    client.connection?.onlinePlayers
-                                        ?.map { it.profile.name }
-                                        ?.filter { it != player.gameProfile.name }
-                                        ?.sorted() ?: emptyList()
-                                } else {
-                                    nearbyPlayers
-                                }
-                            } else {
-                                emptyList()
-                            }
-
-                            val remaining = builder.remaining.lowercase()
-                            suggestions.forEach { name ->
-                                if (name.lowercase().startsWith(remaining)) {
-                                    builder.suggest(name)
-                                }
-                            }
-                            builder.buildFuture()
-                        }
-                        // END TAB-COMPLETION FIX
                         .then(ClientCommandManager.argument("amount", StringArgumentType.string())
                             .executes { context ->
                                 val target = StringArgumentType.getString(context, "target")
@@ -82,7 +52,6 @@ object PayConfirmClient {
                     if (cmd != null) {
                         Minecraft.getInstance().player?.connection?.send(ServerboundChatCommandPacket(cmd))
                         cancelPending()
-                        context.source.sendFeedback(Component.literal("§a§l✔ §aPayment sent!"))
                     } else {
                         context.source.sendError(Component.literal("§cNo payment pending."))
                     }
@@ -94,13 +63,25 @@ object PayConfirmClient {
                 ClientCommandManager.literal("paycancel").executes { context ->
                     if (pendingCommand != null) {
                         cancelPending()
-                        context.source.sendFeedback(Component.literal("§e§l➡ §ePayment cancelled."))
+                        context.source.sendFeedback(Component.literal("§l§4Payment cancelled."))
                     } else {
                         context.source.sendError(Component.literal("§cThere are no payments in process."))
                     }
                     Command.SINGLE_SUCCESS
                 }
             )
+        }
+
+        UseEntityCallback.EVENT.register { player, world, hand, entity, hitResult ->
+            if(!MagicDonutClient.payButtonBinding.isDown) return@register InteractionResult.PASS
+
+            val target = entity as? Player ?: return@register InteractionResult.PASS
+
+            MinecraftClientService.client.setScreen(
+                ChatScreen("/pay ${target.name.string} ")
+            )
+
+            return@register InteractionResult.SUCCESS
         }
     }
 
@@ -147,7 +128,7 @@ object PayConfirmClient {
             }
 
             source.sendFeedback(
-                Component.literal("Click").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) }
+                Component.literal("Click to ").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) }
                     .append(confirmBtn)
                     .append(Component.literal(" or ").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) })
                     .append(cancelBtn)
@@ -171,14 +152,7 @@ object PayConfirmClient {
         return numericPart.toDoubleOrNull()?.let { (it * multiplier).toLong() }
     }
 
-    private fun findNearbyPlayer(): String? {
-        val client = Minecraft.getInstance()
-        val player = client.player ?: return null
-        return client.level?.players()
-            ?.filter { it != player && it.isAlive }
-            ?.minByOrNull { it.distanceToSqr(player) }
-            ?.gameProfile?.name
-    }
+
 
     private fun formatNumber(n: Long) = "%,d".format(n).replace(",", ".")
 

@@ -21,7 +21,7 @@ class StatsRenderer {
     private val lastUpdateTimes = ConcurrentHashMap<String, Long>()
     private val normalUpdateInterval = 10_000L // 10s
     private val fastUpdateInterval = 2_000L // 2s
-    private val maxRequestsPerMinute = 100
+    private val maxRequestsPerMinute = 50
     private val requestCounter = AtomicInteger(0)
     private var lastCounterReset = System.currentTimeMillis()
 

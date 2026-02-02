@@ -27,7 +27,7 @@ loom {
     splitEnvironmentSourceSets()
 
     mods {
-        register("magicdonut") {
+        register("magicdonututils") {
             sourceSet("main")
             sourceSet("client")
         }

@@ -18,7 +18,7 @@ class MagicDonutConfig {
     companion object {
         val HANDLER: ConfigClassHandler<MagicDonutConfig> =
             ConfigClassHandler.createBuilder<MagicDonutConfig>(MagicDonutConfig::class.java)
-                .id(ResourceLocation.fromNamespaceAndPath("magicdonut", "magicdonut"))
+                .id(ResourceLocation.fromNamespaceAndPath("magicdonututils", "magicdonututils"))
                 .serializer { config ->
                     GsonConfigSerializerBuilder.create<MagicDonutConfig>(config)
                         .setPath(FabricLoader.getInstance().configDir.resolve("magicdonut.json5"))
@@ -39,9 +39,13 @@ class MagicDonutConfig {
             return YetAnotherConfigLib.create<MagicDonutConfig>(
                 HANDLER
             ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->
-                builder.title(Component.literal("MagicDonut Config"))
+                builder.title(Component.literal("MagicDonutUtils Config"))
+//                    .category(OverHeadStatusCategory.create(defaults, config))
+                    .category(PayConfirmCategory.create(defaults, config))
+//                    .category(QuickPayCategory.create(defaults, config))
                     .category(DevelopmentCategory.create(defaults, config))
-                    .category(PayConfirmCategory.create(defaults, config)) // Fügt den Pay-Confirm Reiter hinzu
+
+
             }.generateScreen(parent)
         }
     }
@@ -50,5 +54,5 @@ class MagicDonutConfig {
     var developmentConfig: DevelopmentConfig = DevelopmentConfig()
 
     @SerialEntry
-    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig() // Muss var sein für die Serialisierung
+    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig()
 }

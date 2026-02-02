@@ -11,7 +11,7 @@ class ConfigCommand {
             dispatcher: CommandDispatcher<FabricClientCommandSource>
         ) {
             dispatcher.register(
-                ClientCommandManager.literal("magicdonut")
+                ClientCommandManager.literal("magicdonututils")
                     .executes { _ ->
                         val client = MinecraftClientService.client
                         val currentScreen = client.screen

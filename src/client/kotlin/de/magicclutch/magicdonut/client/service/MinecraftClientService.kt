@@ -10,7 +10,7 @@ object MinecraftClientService {
 
     val isOnDonut: Boolean
         get() {
-            return client.currentServer?.ip?.matches(domainRegex) ?: false
+            return client.currentServer?.ip?.lowercase()?.matches(domainRegex) ?: false
         }
 
     fun sendChatMessage(component: Component) {
