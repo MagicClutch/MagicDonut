@@ -14,14 +14,13 @@ class PayConfirmCategory {
                 .name(Component.literal("Pay Confirm"))
                 .tooltip(Component.literal("Payment Savety"))
 
-                // Toggle Switch
                 .option(Option.createBuilder<Boolean>()
                     .name(Component.literal("Active"))
                     .binding(defaults.payConfirmConfig.enabled, { config.payConfirmConfig.enabled }, { config.payConfirmConfig.enabled = it })
                     .controller { TickBoxControllerBuilder.create(it) }
                     .build())
 
-                // Eingabefeld für den Betrag (Long)
+
                 .option(Option.createBuilder<Long>()
                     .name(Component.literal("Pay amount"))
                     .description(OptionDescription.of(Component.literal("You must confirm if you pass this amount.")))
@@ -29,7 +28,6 @@ class PayConfirmCategory {
                     .controller { LongFieldControllerBuilder.create(it) }
                     .build())
 
-                // Slider für das Zeitlimit
                 .option(Option.createBuilder<Int>()
                     .name(Component.literal("Timeout (sec)"))
                     .binding(defaults.payConfirmConfig.timeoutSeconds, { config.payConfirmConfig.timeoutSeconds }, { config.payConfirmConfig.timeoutSeconds = it })

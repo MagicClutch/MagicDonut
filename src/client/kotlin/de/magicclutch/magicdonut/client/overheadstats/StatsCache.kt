@@ -5,12 +5,12 @@ import java.util.concurrent.ConcurrentHashMap
 
 object StatsCache {
     data class Entry(
-        var data: JsonObject?,
+        var data: JsonObject? = null,
         var loading: Boolean = false
     )
 
     private val cache = ConcurrentHashMap<String, Entry>()
 
     operator fun get(name: String): Entry =
-        cache.computeIfAbsent(name) { Entry(null, false) }
+        cache.computeIfAbsent(name) { Entry() }
 }

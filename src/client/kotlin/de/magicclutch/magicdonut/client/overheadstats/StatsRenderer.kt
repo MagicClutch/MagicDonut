@@ -1,6 +1,6 @@
 package de.magicclutch.magicdonut.client.overheadstats
 
-import com.google.gson.JsonObject
+
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.math.Axis
 import de.magicclutch.magicdonut.client.service.APIService
@@ -21,7 +21,7 @@ class StatsRenderer {
     private val lastUpdateTimes = ConcurrentHashMap<String, Long>()
     private val normalUpdateInterval = 10_000L // 10s
     private val fastUpdateInterval = 2_000L // 2s
-    private val maxRequestsPerMinute = 50
+    private val maxRequestsPerMinute = 200
     private val requestCounter = AtomicInteger(0)
     private var lastCounterReset = System.currentTimeMillis()
 
@@ -54,7 +54,7 @@ class StatsRenderer {
 
         checkApiCache(player, players)
 
-        val text = extractTextFromData(StatsCache[name].data)
+        val text = extractTextFromData(name)
 
         renderStatsDisplay(
             player,
@@ -68,17 +68,13 @@ class StatsRenderer {
 
     private fun checkRenderAllowed(player: Player, players: List<AbstractClientPlayer>): Boolean {
         val minecraft = MinecraftClientService.client
-
         if (player == minecraft.player) return false
-
-        //like vanilla nametag
         if (player.isCrouching) return false
         if (player.isInvisibleTo(minecraft.player!!)) return false
 
         val name = player.gameProfile.name
         if (name.length < 3) return false
 
-        // Skip wenn >2 Spieler auf 0,0 und der Spieler auch dort ist
         val playersOnZero = players.count { it.x.toInt() == 0 && it.z.toInt() == 0 }
         if (playersOnZero > 2 && player.x.toInt() == 0 && player.z.toInt() == 0) return false
 
@@ -87,27 +83,30 @@ class StatsRenderer {
 
     private fun checkApiCache(player: Player, players: List<AbstractClientPlayer>) {
         val name = player.gameProfile.name
+        val cacheEntry = StatsCache[name]
 
         val lastUpdate = lastUpdateTimes.getOrDefault(name, 0L)
         val interval = if (players.size < 5) fastUpdateInterval else normalUpdateInterval
 
-        // Reset rate limit every minute
         val now = System.currentTimeMillis()
         if (now - lastCounterReset >= 60_000) {
             requestCounter.set(0)
             lastCounterReset = now
         }
 
-        // Rate-Limit: max 100 Anfragen / Minute
-        if (now - lastUpdate > interval && requestCounter.get() < maxRequestsPerMinute) {
+        if (!cacheEntry.loading && now - lastUpdate > interval && requestCounter.get() < maxRequestsPerMinute) {
             lastUpdateTimes[name] = now
             requestCounter.incrementAndGet()
 
             executor.submit {
-                StatsCache[name].apply {
-                    loading = true
-                    data = APIService.getStats(name)
-                    loading = false
+                cacheEntry.loading = true
+                try {
+                    val newData = APIService.getStats(name)
+                    if (newData != null) {
+                        cacheEntry.data = newData
+                    }
+                } finally {
+                    cacheEntry.loading = false
                 }
             }
         }
@@ -122,7 +121,6 @@ class StatsRenderer {
         text: String
     ) {
         val minecraft = MinecraftClientService.client
-
         val camera = minecraft.entityRenderDispatcher.camera ?: return
         val font = minecraft.font
 
@@ -133,17 +131,11 @@ class StatsRenderer {
         val renderY = y + player.bbHeight + 0.52
 
         matrices.pushPose()
-        matrices.translate(
-            x - cameraPos.x,
-            renderY - cameraPos.y,
-            z - cameraPos.z
-        )
-
+        matrices.translate(x - cameraPos.x, renderY - cameraPos.y, z - cameraPos.z)
         matrices.mulPose(Axis.YP.rotationDegrees(-camera.yRot))
         matrices.mulPose(Axis.XP.rotationDegrees(camera.xRot))
         matrices.scale(-0.025f, -0.025f, 0.025f)
 
-        // ---------- MONEY ONLY ----------
         matrices.pushPose()
         matrices.translate(0.0, 9.0, 0.0)
         matrices.scale(0.5f, 0.5f, 0.5f)
@@ -152,32 +144,32 @@ class StatsRenderer {
         val color = 0xFF00FC00.toInt()
 
         font.drawInBatch(
-            text,
-            -width,
-            0f,
-            color,
-            false,
-            matrices.last().pose(),
-            consumers,
-            DisplayMode.NORMAL,
-            0,
-            15728880
+            text, -width, 0f, color, false,
+            matrices.last().pose(), consumers, DisplayMode.NORMAL, 0, 15728880
         )
 
         matrices.popPose()
         matrices.popPose()
     }
 
-    private fun extractTextFromData(data: JsonObject?): String {
-        val money = data?.getAsJsonPrimitive("money")
+    private fun extractTextFromData(name: String): String {
+        val entry = StatsCache[name]
+        val data = entry.data
+
+        if (data == null && entry.loading) return "§7Loading..."
+
+
+        if (data == null) return "§cNo Data"
+
+        val money = data.getAsJsonPrimitive("money")
             ?.runCatching { asFloat }
-            ?.getOrDefault(0f)
-            ?: return "§7Loading..."
+            ?.getOrDefault(0f) ?: 0f
 
         return "§a${formatMoney(money)}"
     }
 
-    private fun formatMoney(value: Float): String {
+companion object{
+    fun formatMoney(value: Float): String {
         return when {
             value >= 1_000_000_000 -> String.format("%.2fB$", value / 1_000_000_000.0)
             value >= 1_000_000 -> String.format("%.2fM$", value / 1_000_000.0)
@@ -185,4 +177,5 @@ class StatsRenderer {
             else -> String.format("%.2f$", value)
         }
     }
+}
 }

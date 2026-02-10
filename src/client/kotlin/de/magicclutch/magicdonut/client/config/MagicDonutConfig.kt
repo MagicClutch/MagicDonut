@@ -3,8 +3,10 @@ package de.magicclutch.magicdonut.client.config
 import com.google.gson.GsonBuilder
 import de.magicclutch.magicdonut.client.config.category.DevelopmentCategory
 import de.magicclutch.magicdonut.client.config.category.PayConfirmCategory
+import de.magicclutch.magicdonut.client.config.category.DonationCategory
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
+import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
 import dev.isxander.yacl3.api.YetAnotherConfigLib
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler
 import dev.isxander.yacl3.config.v2.api.SerialEntry
@@ -40,9 +42,8 @@ class MagicDonutConfig {
                 HANDLER
             ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->
                 builder.title(Component.literal("MagicDonutUtils Config"))
-//                    .category(OverHeadStatusCategory.create(defaults, config))
                     .category(PayConfirmCategory.create(defaults, config))
-//                    .category(QuickPayCategory.create(defaults, config))
+                    .category(DonationCategory.create(defaults, config))
                     .category(DevelopmentCategory.create(defaults, config))
 
 
@@ -55,4 +56,7 @@ class MagicDonutConfig {
 
     @SerialEntry
     var payConfirmConfig: PayConfirmConfig = PayConfirmConfig()
+
+    @SerialEntry
+    var donationConfig: DonationConfig = DonationConfig()
 }

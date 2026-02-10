@@ -3,6 +3,9 @@ package de.magicclutch.magicdonut.client
 import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.donation.DonationCommand
+import de.magicclutch.magicdonut.client.donation.DonationManager
+import de.magicclutch.magicdonut.client.donation.DonationRenderer
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
 import de.magicclutch.magicdonut.client.payconfirm.PayConfirmClient
 import de.magicclutch.magicdonut.client.service.APIService
@@ -41,6 +44,11 @@ class MagicDonutClient : ClientModInitializer {
 
         StatsRenderer().init()
         PayConfirmClient.init()
+        DonationCommand.register()
+        DonationRenderer.register()
+        ClientReceiveMessageEvents.GAME.register { message, _ ->
+            DonationManager.handleChatMessage(message)
+        }
     }
 
     companion object {

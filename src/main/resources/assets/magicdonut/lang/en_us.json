@@ -1,3 +1,11 @@
 {
-  "magicdonut.quickpay": "QuickPay"
+  "magicdonut.quickpay": "QuickPay",
+  "magicdonut.config.title": "MagicDonutUtils Config",
+  "magicdonut.config.donation": "Donation",
+  "magicdonut.config.donation.position": "Position",
+  "magicdonut.config.donation.x": "X",
+  "magicdonut.config.donation.y": "Y",
+  "magicdonut.config.donation.color": "Color",
+  "magicdonut.donation.reset": "Donation highscore has been reset.",
+  "magicdonut.donation.moved": "Donation display moved to (%s, %s)."
 }
