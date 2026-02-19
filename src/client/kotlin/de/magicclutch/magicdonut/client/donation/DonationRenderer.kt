@@ -12,8 +12,15 @@ object DonationRenderer {
     fun register() {
         HudRenderCallback.EVENT.register { context, _ ->
             val mc = Minecraft.getInstance()
-            val screen = mc.screen
+            val config = MagicDonutConfig.instance.donationConfig
 
+            // 1. Check: Ist das Modul überhaupt an?
+            if (!config.enabled) return@register
+
+            // 2. Check: Sind wir in einer Welt?
+            if (mc.level == null) return@register
+
+            val screen = mc.screen
             if (screen == null || screen is ChatScreen || screen is InventoryScreen || screen is PositionEditScreen) {
                 render(context)
             }
@@ -21,9 +28,10 @@ object DonationRenderer {
     }
 
     fun render(context: GuiGraphics) {
+        val mc = Minecraft.getInstance()
         val config = MagicDonutConfig.instance.donationConfig
         val donation = config.getHighestDonation()
-        val font = Minecraft.getInstance().font
+        val font = mc.font
 
         val contentText = if (donation != null) {
             "${donation.playerName} : ${StatsRenderer.formatMoney(donation.amount)}"
@@ -32,29 +40,39 @@ object DonationRenderer {
         }
 
         val text = "${config.customTitle}: $contentText"
+
+        // --- ZENTRIERUNGS LOGIK (RESIZE-SAFE) ---
         val textWidth = font.width(text)
-        val textHeight = 9
+        val screenWidth = mc.window.guiScaledWidth
+        val centerX = screenWidth / 2f
+
+        // Berechne die Breite inklusive Skalierung
+        val totalScaledWidth = textWidth * config.size
+
+        // Berechne Start-X so, dass die Mitte des Textes auf der Mitte des Screens liegt
+        val xPos = centerX - (totalScaledWidth / 2f)
 
         context.pose().pushPose()
 
-        context.pose().translate(config.x.toFloat(), config.y.toFloat(), 300f)
-
-
+        // Translation nutzt berechnetes xPos statt config.x
+        context.pose().translate(xPos, config.y.toFloat(), 300f)
         context.pose().scale(config.size, config.size, 1f)
 
         if (config.showBox) {
-            val paddingX = 8
+            val paddingX = 6
             val paddingY = 2
 
-            val x = -paddingX
-            val y = -paddingY
-            val w = textWidth + paddingX * 2
-            val h = textHeight + paddingY * 2
-
-
-            drawRoundedRect(context, x, y, w, h, 3, config.boxColor)
+            // Zeichne Box relativ zu 0,0 (da Pose bereits verschoben ist)
+            drawRoundedRect(
+                context,
+                -paddingX,
+                -paddingY,
+                textWidth + (paddingX * 2),
+                9 + (paddingY * 2),
+                3,
+                config.boxColor
+            )
         }
-
 
         context.drawString(font, text, 0, 0, config.color, true)
 
@@ -62,7 +80,6 @@ object DonationRenderer {
     }
 
     private fun drawRoundedRect(context: GuiGraphics, x: Int, y: Int, width: Int, height: Int, radius: Int, color: Int) {
-
         context.fill(x + radius, y, x + width - radius, y + height, color)
         context.fill(x, y + radius, x + radius, y + height - radius, color)
         context.fill(x + width - radius, y + radius, x + width, y + height - radius, color)

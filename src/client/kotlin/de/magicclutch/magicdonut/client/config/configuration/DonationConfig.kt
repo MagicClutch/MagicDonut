@@ -7,6 +7,9 @@ import java.awt.Color
 
 class DonationConfig {
     @SerialEntry
+    var enabled: Boolean = true // Der neue An/Aus Schalter
+
+    @SerialEntry
     var highestDonationPlayer: String? = null
     @SerialEntry
     var highestDonationAmount: Float = 0.0F
@@ -33,7 +36,6 @@ class DonationConfig {
 
     @SerialEntry
     var showBox: Boolean = true
-
 
     @SerialEntry
     var boxColor: Int = Color(192, 192, 192, 150).rgb

@@ -15,6 +15,18 @@ import java.awt.Color
 object DonationCategory {
     fun create(defaults: MagicDonutConfig, config: MagicDonutConfig): ConfigCategory {
 
+        // --- GENERAL OPTIONS ---
+        val enabledOption = Option.createBuilder<Boolean>()
+            .name(Component.translatable("Enabled"))
+            .description(OptionDescription.of(Component.translatable("Show or hide the donation overlay.")))
+            .binding(
+                defaults.donationConfig.enabled,
+                { config.donationConfig.enabled },
+                { config.donationConfig.enabled = it }
+            )
+            .controller { TickBoxControllerBuilder.create(it) }
+            .build()
+
         // --- POSITION & SIZE ---
         val sizeOption = Option.createBuilder<Float>()
             .name(Component.translatable("Size"))
@@ -88,6 +100,11 @@ object DonationCategory {
         // --- BUILD CATEGORY ---
         return ConfigCategory.createBuilder()
             .name(Component.translatable("magicdonut.config.donation"))
+            // Hier habe ich die neue Gruppe "General" hinzugefügt
+            .group(OptionGroup.createBuilder()
+                .name(Component.translatable("General"))
+                .option(enabledOption)
+                .build())
             .group(OptionGroup.createBuilder()
                 .name(Component.translatable("Layout"))
                 .option(sizeOption)
