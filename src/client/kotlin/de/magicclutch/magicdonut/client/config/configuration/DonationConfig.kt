@@ -15,9 +15,9 @@ class DonationConfig {
     var highestDonationAmount: Float = 0.0F
 
     @SerialEntry
-    var x: Int = 10
+    var x: Float = 0.5f
     @SerialEntry
-    var y: Int = 10
+    var y: Float = 0.05f
 
     @SerialEntry
     var size: Float = 1.0F

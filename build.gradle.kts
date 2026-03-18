@@ -74,7 +74,7 @@ dependencies {
 
     // Config
     modImplementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
-    modCompileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    modImplementation("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
 
     // Dev Authentication to be able to test the mod on DonutSMP
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")

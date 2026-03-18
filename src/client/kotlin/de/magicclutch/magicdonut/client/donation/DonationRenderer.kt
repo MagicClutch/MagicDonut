@@ -1,7 +1,6 @@
 package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -34,49 +33,49 @@ object DonationRenderer {
         val font = mc.font
 
         val contentText = if (donation != null) {
-            "${donation.playerName} : ${StatsRenderer.formatMoney(donation.amount)}"
+            "${donation.playerName} : ${formatMoney(donation.amount)}"
         } else {
             config.noDonationText
         }
 
         val text = "${config.customTitle}: $contentText"
-
-        // --- ZENTRIERUNGS LOGIK (RESIZE-SAFE) ---
-        val textWidth = font.width(text)
-        val screenWidth = mc.window.guiScaledWidth
-        val centerX = screenWidth / 2f
-
-        // Berechne die Breite inklusive Skalierung
-        val totalScaledWidth = textWidth * config.size
-
-        // Berechne Start-X so, dass die Mitte des Textes auf der Mitte des Screens liegt
-        val xPos = centerX - (totalScaledWidth / 2f)
-
-        context.pose().pushPose()
-
-        // Translation nutzt berechnetes xPos statt config.x
-        context.pose().translate(xPos, config.y.toFloat(), 300f)
-        context.pose().scale(config.size, config.size, 1f)
+        val textWidth = font.width(text).toFloat()
+        val screenWidth = mc.window.guiScaledWidth.toFloat()
+        val screenHeight = mc.window.guiScaledHeight.toFloat()
+        val centerX = screenWidth * config.x.coerceIn(0f, 1f)
+        val centerY = screenHeight * config.y.coerceIn(0f, 1f)
+        val pose = context.pose()
+        pose.pushMatrix()
+        pose.translate(centerX, centerY)
+        pose.scale(config.size, config.size)
 
         if (config.showBox) {
             val paddingX = 6
             val paddingY = 2
 
-            // Zeichne Box relativ zu 0,0 (da Pose bereits verschoben ist)
             drawRoundedRect(
                 context,
-                -paddingX,
+                -(textWidth / 2).toInt() - paddingX,
                 -paddingY,
-                textWidth + (paddingX * 2),
+                (textWidth + paddingX * 2).toInt(),
                 9 + (paddingY * 2),
                 3,
                 config.boxColor
             )
         }
 
-        context.drawString(font, text, 0, 0, config.color, true)
+        context.drawString(font, text, -(textWidth / 2).toInt(), 0, config.color, true)
 
-        context.pose().popPose()
+        pose.popMatrix()
+    }
+
+    private fun formatMoney(value: Float): String {
+        return when {
+            value >= 1_000_000_000 -> String.format("%.2fB$", value / 1_000_000_000.0)
+            value >= 1_000_000 -> String.format("%.2fM$", value / 1_000_000.0)
+            value >= 1_000 -> String.format("%.2fK$", value / 1_000.0)
+            else -> String.format("%.2f$", value)
+        }
     }
 
     private fun drawRoundedRect(context: GuiGraphics, x: Int, y: Int, width: Int, height: Int, radius: Int, color: Int) {

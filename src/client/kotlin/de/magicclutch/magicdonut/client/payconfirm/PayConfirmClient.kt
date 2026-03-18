@@ -12,10 +12,12 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.network.chat.ClickEvent
+import net.minecraft.network.chat.ClickEvent.RunCommand
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
+import net.minecraft.network.chat.HoverEvent.ShowText
 import net.minecraft.network.chat.TextColor
+import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
 import java.util.*
@@ -72,13 +74,13 @@ object PayConfirmClient {
             )
         }
 
-        UseEntityCallback.EVENT.register { player, world, hand, entity, hitResult ->
+        UseEntityCallback.EVENT.register { _, _, _, entity, _ ->
             if(!MagicDonutClient.payButtonBinding.isDown) return@register InteractionResult.PASS
 
             val target = entity as? Player ?: return@register InteractionResult.PASS
 
             MinecraftClientService.client.setScreen(
-                ChatScreen("/pay ${target.name.string} ")
+                ChatScreen("/pay ${target.name.string} ", false)
             )
 
             return@register InteractionResult.SUCCESS
@@ -116,15 +118,15 @@ object PayConfirmClient {
             val confirmBtn = Component.literal("[✔ Confirm]").withStyle { style ->
                 style.withColor(TextColor.fromRgb(0x55FF55))
                     .withBold(true)
-                    .withClickEvent(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/payconfirm"))
-                    .withHoverEvent(HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("§a/payconfirm")))
+                    .withClickEvent(RunCommand("/payconfirm") as ClickEvent)
+                    .withHoverEvent(ShowText(Component.literal("§a/payconfirm")) as HoverEvent)
             }
 
             val cancelBtn = Component.literal("[❌ Cancel]").withStyle { style ->
                 style.withColor(TextColor.fromRgb(0xFF5555))
                     .withBold(true)
-                    .withClickEvent(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/paycancel"))
-                    .withHoverEvent(HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("§c/paycancel")))
+                    .withClickEvent(RunCommand("/paycancel") as ClickEvent)
+                    .withHoverEvent(ShowText(Component.literal("§c/paycancel")) as HoverEvent)
             }
 
             source.sendFeedback(
@@ -151,10 +153,6 @@ object PayConfirmClient {
         val numericPart = clean.replace("[KMB]".toRegex(), "")
         return numericPart.toDoubleOrNull()?.let { (it * multiplier).toLong() }
     }
-
-
-
-    private fun formatNumber(n: Long) = "%,d".format(n).replace(",", ".")
 
     private fun startTimeout(source: FabricClientCommandSource, seconds: Int) {
         cancelPending()
