@@ -7,6 +7,13 @@ class OverheadStatsConfig {
     var enabled: Boolean = true
 
     @SerialEntry
+    var displayMode: DisplayMode = DisplayMode.FIXED
+
+    // Only used when displayMode == CYCLE.
+    @SerialEntry
+    var cycleSeconds: Int = 5
+
+    @SerialEntry
     var stat: StatField = StatField.MONEY
 
     // Relative to the vanilla name tag attachment position.
@@ -17,6 +24,11 @@ class OverheadStatsConfig {
     // Scale factor for the stat label text (1.0 = vanilla size).
     @SerialEntry
     var statScale: Float = 0.5f
+
+    enum class DisplayMode {
+        FIXED,
+        CYCLE
+    }
 
     enum class StatField(
         val apiKey: String,

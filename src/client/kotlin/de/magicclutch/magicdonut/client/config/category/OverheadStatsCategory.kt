@@ -8,6 +8,7 @@ import dev.isxander.yacl3.api.OptionDescription
 import dev.isxander.yacl3.api.OptionGroup
 import dev.isxander.yacl3.api.controller.CyclingListControllerBuilder
 import dev.isxander.yacl3.api.controller.FloatSliderControllerBuilder
+import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder
 import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder
 import net.minecraft.network.chat.Component
 
@@ -32,6 +33,24 @@ object OverheadStatsCategory {
             .description(OptionDescription.of(Component.literal("Show a chosen stat above your head.")))
             .binding(defaults.overheadStatsConfig.enabled, { config.overheadStatsConfig.enabled }, { config.overheadStatsConfig.enabled = it })
             .controller { TickBoxControllerBuilder.create(it) }
+            .build()
+
+        val displayModeOption = Option.createBuilder<OverheadStatsConfig.DisplayMode>()
+            .name(Component.literal("Display Mode"))
+            .description(OptionDescription.of(Component.literal("Fixed shows one stat. Cycle rotates through stats automatically.")))
+            .binding(defaults.overheadStatsConfig.displayMode, { config.overheadStatsConfig.displayMode }, { config.overheadStatsConfig.displayMode = it })
+            .controller {
+                CyclingListControllerBuilder.create(it)
+                    .values(OverheadStatsConfig.DisplayMode.entries)
+                    .valueFormatter { v -> Component.literal(v.name.lowercase().replaceFirstChar { c -> c.uppercase() }) }
+            }
+            .build()
+
+        val cycleSecondsOption = Option.createBuilder<Int>()
+            .name(Component.literal("Cycle Seconds"))
+            .description(OptionDescription.of(Component.literal("How long each stat is shown when in Cycle mode.")))
+            .binding(defaults.overheadStatsConfig.cycleSeconds, { config.overheadStatsConfig.cycleSeconds }, { config.overheadStatsConfig.cycleSeconds = it })
+            .controller { opt -> IntegerSliderControllerBuilder.create(opt).range(1, 30).step(1) }
             .build()
 
         val statOption = Option.createBuilder<OverheadStatsConfig.StatField>()
@@ -66,6 +85,8 @@ object OverheadStatsCategory {
                 OptionGroup.createBuilder()
                     .name(Component.literal("Display"))
                     .option(enabled)
+                    .option(displayModeOption)
+                    .option(cycleSecondsOption)
                     .option(statOption)
                     .option(yOffsetOption)
                     .option(scaleOption)

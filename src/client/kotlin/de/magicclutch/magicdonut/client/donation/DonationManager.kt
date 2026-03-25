@@ -7,7 +7,8 @@ object DonationManager {
     private val config get() = MagicDonutConfig.instance.donationConfig
 
     // Neuer Regex: Sucht nach Zahl + optionalem Suffix (k, m, b)
-    private val regex = Regex("(\\w+) paid you \\$(\\d+(?:\\.\\d+)?)\\s*([kmbKMB]?)")
+    // Capture the full name token (Bedrock players can have a leading '.', e.g. ".name").
+    private val regex = Regex("([^\\s]+) paid you \\$(\\d+(?:\\.\\d+)?)\\s*([kmbKMB]?)")
 
     fun handleChatMessage(message: Component) {
         val textContent = message.string

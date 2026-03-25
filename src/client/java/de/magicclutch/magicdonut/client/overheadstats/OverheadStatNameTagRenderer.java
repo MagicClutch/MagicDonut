@@ -55,11 +55,11 @@ public final class OverheadStatNameTagRenderer {
 
         customState.magicdonut$setStatText(label.getText());
         customState.magicdonut$setStatColor(label.getColor());
-        drawLabel(state, customState, matrices, queue, cameraState, nameLabelPos);
+        drawLabel(state, label.getStat(), customState, matrices, queue, cameraState, nameLabelPos);
         customState.magicdonut$setDrawn(true);
     }
 
-    private static void drawLabel(EntityRenderState state, CustomStatRenderState customState, PoseStack matrices, SubmitNodeCollector queue, CameraRenderState cameraState, Vec3 nameLabelPos) {
+    private static void drawLabel(EntityRenderState state, OverheadStatsConfig.StatField stat, CustomStatRenderState customState, PoseStack matrices, SubmitNodeCollector queue, CameraRenderState cameraState, Vec3 nameLabelPos) {
         int light = state.lightCoords == 0 ? DEFAULT_LIGHT : state.lightCoords;
         boolean notSneaking = !state.isDiscrete;
 
@@ -68,7 +68,6 @@ public final class OverheadStatNameTagRenderer {
 
         Vec3 statPos = new Vec3(nameLabelPos.x, nameLabelPos.y + yOffset, nameLabelPos.z);
 
-        OverheadStatsConfig.StatField stat = MagicDonutConfig.Companion.getInstance().getOverheadStatsConfig().getStat();
         Component statText;
         if (stat == OverheadStatsConfig.StatField.SHARDS) {
             Component icon = Component.literal(AMETHYST_SHARD_GLYPH).withStyle(style -> style.withFont(ICON_FONT));

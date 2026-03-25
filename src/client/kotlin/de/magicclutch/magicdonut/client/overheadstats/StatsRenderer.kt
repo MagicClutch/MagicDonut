@@ -16,7 +16,16 @@ import kotlin.math.abs
 import kotlin.math.max
 
 object StatsRenderer {
+    private val allowedStats = listOf(
+        StatField.MONEY,
+        StatField.DEATHS,
+        StatField.KILLS,
+        StatField.SHARDS,
+        StatField.PLAYTIME
+    )
+
     data class RenderLabel(
+        val stat: StatField,
         val text: String,
         val color: Int
     )
@@ -75,16 +84,11 @@ object StatsRenderer {
         val normalizedName = name?.takeIf { it.isNotBlank() }?.let(StatsCache::normalize) ?: return null
         val entry = StatsCache[normalizedName]
         val data = entry.data
-        val stat = MagicDonutConfig.instance.overheadStatsConfig.stat.let { configured ->
-            when (configured) {
-                StatField.MONEY, StatField.DEATHS, StatField.KILLS, StatField.SHARDS, StatField.PLAYTIME -> configured
-                else -> StatField.MONEY
-            }
-        }
+        val stat = currentStat()
 
         if (data == null) {
             return if (entry.loading || isApiAvailable()) {
-                RenderLabel(withIcon(stat, "???"), LOADING_COLOR)
+                RenderLabel(stat, withIcon(stat, "???"), LOADING_COLOR)
             } else {
                 null
             }
@@ -99,7 +103,7 @@ object StatsRenderer {
             }
         }
 
-        return RenderLabel(withIcon(stat, text), statColor(stat))
+        return RenderLabel(stat, withIcon(stat, text), statColor(stat))
     }
 
     private fun canTrack(player: Player): Boolean {
@@ -161,6 +165,20 @@ object StatsRenderer {
 
     private fun isApiAvailable(): Boolean =
         APIService.hasApiKey()
+
+    private fun currentStat(): StatField {
+        val cfg = MagicDonutConfig.instance.overheadStatsConfig
+        val fallback = StatField.MONEY
+
+        val fixed = cfg.stat.takeIf { it in allowedStats } ?: fallback
+        if (cfg.displayMode != de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig.DisplayMode.CYCLE) {
+            return fixed
+        }
+
+        val seconds = cfg.cycleSeconds.coerceIn(1, 30)
+        val idx = ((System.currentTimeMillis() / (seconds * 1000L)) % allowedStats.size).toInt()
+        return allowedStats.getOrElse(idx) { fixed }
+    }
 
     private fun statColor(stat: StatField): Int {
         return when (stat) {
