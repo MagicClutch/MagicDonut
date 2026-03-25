@@ -1,0 +1,31 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/amethyst_shard.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        "\uE101"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/diamond_sword.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        "\uE102"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "minecraft:item/clock_00.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        "\uE103"
+      ]
+    }
+  ]
+}

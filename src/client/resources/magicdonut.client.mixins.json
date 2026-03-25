@@ -3,7 +3,12 @@
   "minVersion": "0.8",
   "package": "de.magicclutch.magicdonut.client.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [],
+  "client": [
+    "AvatarRenderStateMixin",
+    "AvatarRendererMixin",
+    "AvatarRendererUpdateMixin",
+    "EntityRendererLabelFallbackMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

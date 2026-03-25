@@ -1,0 +1,21 @@
+package de.magicclutch.magicdonut.client.mixin;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import de.magicclutch.magicdonut.client.overheadstats.CustomStatRenderState;
+import de.magicclutch.magicdonut.client.overheadstats.OverheadStatNameTagRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(AvatarRenderer.class)
+public abstract class AvatarRendererMixin {
+    @Inject(method = "submitNameTag", at = @At("HEAD"))
+    private void magicdonut$renderOverheadStats(AvatarRenderState state, PoseStack matrices, SubmitNodeCollector queue, CameraRenderState cameraState, CallbackInfo ci) {
+        OverheadStatNameTagRenderer.populateAndRender(state, (CustomStatRenderState) state, matrices, queue, cameraState);
+    }
+}

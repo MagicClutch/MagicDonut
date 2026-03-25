@@ -12,5 +12,8 @@ object StatsCache {
     private val cache = ConcurrentHashMap<String, Entry>()
 
     operator fun get(name: String): Entry =
-        cache.computeIfAbsent(name) { Entry() }
+        cache.computeIfAbsent(normalize(name)) { Entry() }
+
+    fun normalize(name: String): String =
+        name.trim().lowercase()
 }

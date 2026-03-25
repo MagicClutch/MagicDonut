@@ -9,16 +9,26 @@ class OverheadStatsConfig {
     @SerialEntry
     var stat: StatField = StatField.MONEY
 
-    enum class StatField(val apiKey: String) {
-        BROKEN_BLOCKS("broken_blocks"),
-        DEATHS("deaths"),
-        KILLS("kills"),
-        MOBS_KILLED("mobs_killed"),
-        MONEY("money"),
-        MONEY_MADE_FROM_SELL("money_made_from_sell"),
-        MONEY_SPENT_ON_SHOP("money_spent_on_shop"),
-        PLACED_BLOCKS("placed_blocks"),
-        PLAYTIME("playtime"),
-        SHARDS("shards");
+    // Relative to the vanilla name tag attachment position.
+    // Negative values render below the username, positive values above.
+    @SerialEntry
+    var statYOffset: Float = 1.85f
+
+    // Scale factor for the stat label text (1.0 = vanilla size).
+    @SerialEntry
+    var statScale: Float = 0.5f
+
+    enum class StatField(
+        val apiKey: String,
+        val displayName: String,
+        val iconGlyph: String? = null
+    ) {
+        MONEY("money", "Money"),
+        SHARDS("shards", "Shards"),
+        PLAYTIME("playtime", "Playtime"),
+        KILLS("kills", "Kills"),
+        DEATHS("deaths", "Deaths", "☠");
+
+        override fun toString(): String = displayName
     }
 }
