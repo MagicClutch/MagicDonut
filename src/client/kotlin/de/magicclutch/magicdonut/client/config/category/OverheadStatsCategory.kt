@@ -68,7 +68,7 @@ object OverheadStatsCategory {
             .name(Component.literal("Stat Y Offset"))
             .description(OptionDescription.of(Component.literal("Vertical offset relative to the username. Negative is below, positive is above.")))
             .binding(defaults.overheadStatsConfig.statYOffset, { config.overheadStatsConfig.statYOffset }, { config.overheadStatsConfig.statYOffset = it })
-            .controller { opt -> FloatSliderControllerBuilder.create(opt).range(-2.0f, 2.0f).step(0.0625f) }
+            .controller { opt -> FloatSliderControllerBuilder.create(opt).range(0f, 4.0f).step(0.05f) }
             .build()
 
         val scaleOption = Option.createBuilder<Float>()
