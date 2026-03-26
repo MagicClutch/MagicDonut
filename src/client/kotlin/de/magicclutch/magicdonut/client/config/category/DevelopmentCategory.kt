@@ -1,8 +1,9 @@
 package de.magicclutch.magicdonut.client.config.category
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import dev.isxander.yacl3.api.*
-import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder
+import dev.isxander.yacl3.api.ConfigCategory
+import dev.isxander.yacl3.api.Option
+import dev.isxander.yacl3.api.OptionDescription
 import dev.isxander.yacl3.api.controller.StringControllerBuilder
 import net.minecraft.network.chat.Component
 
@@ -21,19 +22,6 @@ class DevelopmentCategory {
                         { newVal -> config.developmentConfig.apiKey = newVal }
                     )
                     .controller { StringControllerBuilder.create(it) }
-                    .build())
-                .group(OptionGroup.createBuilder()
-                    .name(Component.literal("API Settings"))
-                    .option(Option.createBuilder<Int>()
-                        .name(Component.literal("Overhead Stats Refresh Rate"))
-                        .description(OptionDescription.of(Component.literal("Refresh rate in seconds")))
-                        .binding(
-                            defaults.developmentConfig.overheadStatsRefreshRate,
-                            { config.developmentConfig.overheadStatsRefreshRate },
-                            { newVal -> config.developmentConfig.overheadStatsRefreshRate = newVal }
-                        )
-                        .controller { opt -> IntegerSliderControllerBuilder.create(opt).range(1, 60).step(1) }
-                        .build())
                     .build())
                 .build()
         }

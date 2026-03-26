@@ -12,7 +12,6 @@ import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.client.KeyMapping
@@ -43,14 +42,14 @@ class MagicDonutClient : ClientModInitializer {
             }
         }
 
+        ClientReceiveMessageEvents.GAME.register { message, _ ->
+            DonationManager.handleChatMessage(message)
+        }
+
         StatsRenderer.init()
         PayConfirmClient.init()
         DonationCommand.register()
         DonationRenderer.register()
-
-        ClientReceiveMessageEvents.GAME.register { message, _ ->
-            DonationManager.handleChatMessage(message)
-        }
     }
 
     companion object {

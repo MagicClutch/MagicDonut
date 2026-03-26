@@ -6,6 +6,5 @@ class DevelopmentConfig {
     @SerialEntry
     var apiKey: String = ""
 
-    @SerialEntry
-    var overheadStatsRefreshRate: Int = 5
+
 }

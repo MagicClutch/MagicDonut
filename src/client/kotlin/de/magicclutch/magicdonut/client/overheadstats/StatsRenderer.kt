@@ -8,11 +8,13 @@ import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import de.magicclutch.magicdonut.client.util.PlayerIdentityUtil
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.minecraft.client.Minecraft
+import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.player.Player
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.max
 
 object StatsRenderer {
@@ -37,27 +39,100 @@ object StatsRenderer {
     private val requestCounter = AtomicInteger(0)
     private var lastCounterReset = System.currentTimeMillis()
 
+    @Volatile
+    private var allowedPlayers: Set<String> = emptySet()
+    @Volatile
+    private var allowedPlayerCount: Int = 0
+
+    private const val MAX_PLAYERS_PER_BLOCK = 3
+    private const val EXCLUDED_EPS = 1e-6
+    private const val MAX_REQUESTS_PER_MINUTE_MIN = 1
+    private const val MAX_REQUESTS_PER_MINUTE_MAX = 250
+
     fun init() {
         ClientTickEvents.END_CLIENT_TICK.register {
-            if (!MinecraftClientService.isOnDonut) return@register
+            if (!MinecraftClientService.isOnDonut) {
+                allowedPlayers = emptySet()
+                allowedPlayerCount = 0
+                return@register
+            }
             val mc = Minecraft.getInstance()
-            val level = mc.level ?: return@register
+            val level = mc.level ?: run {
+                allowedPlayers = emptySet()
+                allowedPlayerCount = 0
+                return@register
+            }
             val cfg = MagicDonutConfig.instance.overheadStatsConfig
-            if (!cfg.enabled) return@register
+            if (!cfg.enabled) {
+                allowedPlayers = emptySet()
+                allowedPlayerCount = 0
+                return@register
+            }
 
-            for (player in level.players()) {
-                if (!canTrack(player)) continue
-                requestStatsIfNeeded(PlayerIdentityUtil.getCanonicalUsername(player))
+            // Build a snapshot of players we allow for overhead stats this tick.
+            // Rules:
+            // - If >3 players occupy the same block: exclude all players on that block.
+            // - Exclude players at exact X/Z coords: (0,0) and (-0.5, 0.5).
+            val tracked = level.players()
+                .asSequence()
+                .filter { canTrack(it) }
+                .filterNot { isExcludedXZ(it) }
+                .mapNotNull { p -> PlayerIdentityUtil.getCanonicalUsername(p)?.let { StatsCache.normalize(it) }?.let { it to p.blockPosition() } }
+                .toList()
+
+            val perBlock = HashMap<BlockPos, Int>(tracked.size)
+            for ((_, pos) in tracked) {
+                perBlock[pos] = (perBlock[pos] ?: 0) + 1
+            }
+
+            val overcrowded = perBlock.asSequence()
+                .filter { it.value > MAX_PLAYERS_PER_BLOCK }
+                .map { it.key }
+                .toHashSet()
+
+            val allowed = tracked.asSequence()
+                .filterNot { (_, pos) -> overcrowded.contains(pos) }
+                .map { it.first }
+                .toHashSet()
+
+            allowedPlayers = allowed
+            allowedPlayerCount = allowed.size
+
+            for (name in allowed) {
+                requestStatsIfNeeded(name)
             }
         }
     }
 
+    private fun getMaxRequestsPerMinute(): Int {
+        return MagicDonutConfig.instance.overheadStatsConfig.maxRequestsPerMinute
+            .coerceIn(MAX_REQUESTS_PER_MINUTE_MIN, MAX_REQUESTS_PER_MINUTE_MAX)
+    }
+
+    private fun computeAutoRefreshMs(validPlayerCount: Int): Long {
+        if (validPlayerCount <= 0) return Long.MAX_VALUE
+
+        // Goal:
+        // - Low players => high refresh (up to 60 requests/min per player => 1s interval)
+        // - More players => lower refresh while staying within global cap.
+        // Using the global cap we enforce via requestCounter (<maxRequestsPerMinute/min).
+        val maxRequestsPerMinute = getMaxRequestsPerMinute()
+        val perPlayerRpm = minOf(60, maxRequestsPerMinute / validPlayerCount) // floor division
+        if (perPlayerRpm <= 0) {
+            // Fractional RPM per player, avoid division by zero.
+            return ceil((60_000.0 * validPlayerCount) / maxRequestsPerMinute.toDouble()).toLong().coerceAtLeast(1L)
+        }
+        return ceil(60_000.0 / perPlayerRpm.toDouble()).toLong().coerceAtLeast(1L)
+    }
+
     fun requestStatsIfNeeded(name: String?) {
         val normalizedName = name?.takeIf { it.isNotBlank() }?.let(StatsCache::normalize) ?: return
+        // If we know this player is excluded this tick, skip API checks entirely.
+        if (allowedPlayers.isNotEmpty() && !allowedPlayers.contains(normalizedName)) return
         if (!isApiAvailable()) return
 
         val cache = StatsCache[normalizedName]
-        val refreshMs = MagicDonutConfig.instance.developmentConfig.overheadStatsRefreshRate * 1000L
+        val refreshMs = computeAutoRefreshMs(allowedPlayerCount)
         val now = System.currentTimeMillis()
 
         if (now - lastCounterReset >= 60_000) {
@@ -66,7 +141,7 @@ object StatsRenderer {
         }
 
         val last = lastUpdateTimes.getOrDefault(normalizedName, 0L)
-        if (!cache.loading && now - last > refreshMs && requestCounter.get() < 200) {
+        if (!cache.loading && now - last > refreshMs && requestCounter.get() < getMaxRequestsPerMinute()) {
             lastUpdateTimes[normalizedName] = now
             requestCounter.incrementAndGet()
             cache.loading = true
@@ -82,6 +157,8 @@ object StatsRenderer {
 
     fun getRenderLabel(name: String?): RenderLabel? {
         val normalizedName = name?.takeIf { it.isNotBlank() }?.let(StatsCache::normalize) ?: return null
+        // Hard render exclusion: don't show overhead stats for excluded players.
+        if (allowedPlayers.isNotEmpty() && !allowedPlayers.contains(normalizedName)) return null
         val entry = StatsCache[normalizedName]
         val data = entry.data
         val stat = currentStat()
@@ -112,6 +189,14 @@ object StatsRenderer {
         if (self != null && player.isInvisibleTo(self)) return false
         if (player.gameProfile.name.length < 3) return false
         return true
+    }
+
+    private fun isExcludedXZ(player: Player): Boolean {
+        val x = player.x
+        val z = player.z
+        val atZero = abs(x - 0.0) <= EXCLUDED_EPS && abs(z - 0.0) <= EXCLUDED_EPS
+        val atNegHalf = abs(x - (-0.5)) <= EXCLUDED_EPS && abs(z - 0.5) <= EXCLUDED_EPS
+        return atZero || atNegHalf
     }
 
     private fun parseDoubleSafe(element: JsonElement?): Double? {

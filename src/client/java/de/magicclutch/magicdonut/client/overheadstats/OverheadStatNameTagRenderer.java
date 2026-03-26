@@ -45,7 +45,6 @@ public final class OverheadStatNameTagRenderer {
             return;
         }
 
-        StatsRenderer.INSTANCE.requestStatsIfNeeded(canonicalUsername);
         customState.magicdonut$clearDisplayData();
 
         RenderLabel label = StatsRenderer.INSTANCE.getRenderLabel(canonicalUsername);

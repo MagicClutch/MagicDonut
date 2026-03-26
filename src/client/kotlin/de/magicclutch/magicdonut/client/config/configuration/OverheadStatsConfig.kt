@@ -6,6 +6,11 @@ class OverheadStatsConfig {
     @SerialEntry
     var enabled: Boolean = true
 
+    // Global cap for overhead stats API usage.
+    // This is used by the auto-refresh logic to scale refresh rate based on nearby player count.
+    @SerialEntry
+    var maxRequestsPerMinute: Int = 200
+
     @SerialEntry
     var displayMode: DisplayMode = DisplayMode.FIXED
 

@@ -77,15 +77,6 @@ object DonationCategory {
             .controller { TickBoxControllerBuilder.create(it) }
             .build()
 
-        val roundedOption = Option.createBuilder<Boolean>()
-            .name(Component.translatable("Rounded"))
-            .binding(
-                defaults.donationConfig.roundedCorners,
-                { config.donationConfig.roundedCorners },
-                { config.donationConfig.roundedCorners = it }
-            )
-            .controller { TickBoxControllerBuilder.create(it) }
-            .build()
 
         val boxColorOption = Option.createBuilder<Color>()
             .name(Component.translatable("Box Color"))
@@ -119,7 +110,6 @@ object DonationCategory {
             .group(OptionGroup.createBuilder()
                 .name(Component.translatable("Box Settings"))
                 .option(boxToggleOption)
-                .option(roundedOption)
                 .option(boxColorOption)
                 .build())
             .build()

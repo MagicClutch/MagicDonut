@@ -35,6 +35,13 @@ object OverheadStatsCategory {
             .controller { TickBoxControllerBuilder.create(it) }
             .build()
 
+        val maxRequestsOption = Option.createBuilder<Int>()
+            .name(Component.literal("Max Requests/Min"))
+            .description(OptionDescription.of(Component.literal("Global cap for overhead stats API requests (1-250). Auto-refresh scales per player from this.")))
+            .binding(defaults.overheadStatsConfig.maxRequestsPerMinute, { config.overheadStatsConfig.maxRequestsPerMinute }, { config.overheadStatsConfig.maxRequestsPerMinute = it })
+            .controller { opt -> IntegerSliderControllerBuilder.create(opt).range(1, 250).step(1) }
+            .build()
+
         val displayModeOption = Option.createBuilder<OverheadStatsConfig.DisplayMode>()
             .name(Component.literal("Display Mode"))
             .description(OptionDescription.of(Component.literal("Fixed shows one stat. Cycle rotates through stats automatically.")))
@@ -85,6 +92,7 @@ object OverheadStatsCategory {
                 OptionGroup.createBuilder()
                     .name(Component.literal("Display"))
                     .option(enabled)
+                    .option(maxRequestsOption)
                     .option(displayModeOption)
                     .option(cycleSecondsOption)
                     .option(statOption)

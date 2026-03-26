@@ -6,6 +6,9 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.min
 
 object DonationRenderer {
     fun register() {
@@ -32,6 +35,12 @@ object DonationRenderer {
         val donation = config.getHighestDonation()
         val font = mc.font
 
+        // During aggressive window resizing (or when minimized), scaled dimensions can hit 0.
+        // Rendering with a 0x0 GUI size can lead to NaN transforms and pose stack corruption if an exception occurs.
+        val screenWidthInt = mc.window.guiScaledWidth
+        val screenHeightInt = mc.window.guiScaledHeight
+        if (screenWidthInt <= 0 || screenHeightInt <= 0) return
+
         val contentText = if (donation != null) {
             "${donation.playerName} : ${formatMoney(donation.amount)}"
         } else {
@@ -40,33 +49,40 @@ object DonationRenderer {
 
         val text = "${config.customTitle}: $contentText"
         val textWidth = font.width(text).toFloat()
-        val screenWidth = mc.window.guiScaledWidth.toFloat()
-        val screenHeight = mc.window.guiScaledHeight.toFloat()
-        val centerX = screenWidth * config.x.coerceIn(0f, 1f)
-        val centerY = screenHeight * config.y.coerceIn(0f, 1f)
+        val screenWidth = screenWidthInt.toFloat()
+        val screenHeight = screenHeightInt.toFloat()
+
+        val xNorm = config.x.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
+        val yNorm = config.y.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.05f
+        val scale = config.size.takeIf { it.isFinite() }?.coerceIn(0.25f, 8.0f) ?: 1.0f
+
+        val centerX = screenWidth * xNorm
+        val centerY = screenHeight * yNorm
+
         val pose = context.pose()
         pose.pushMatrix()
-        pose.translate(centerX, centerY)
-        pose.scale(config.size, config.size)
+        try {
+            pose.translate(centerX, centerY)
+            pose.scale(scale, scale)
 
-        if (config.showBox) {
-            val paddingX = 6
-            val paddingY = 2
+            if (config.showBox) {
+                val paddingX = 6f
+                val paddingY = 2f
 
-            drawRoundedRect(
-                context,
-                -(textWidth / 2).toInt() - paddingX,
-                -paddingY,
-                (textWidth + paddingX * 2).toInt(),
-                9 + (paddingY * 2),
-                3,
-                config.boxColor
-            )
+                val boxX = floor(-(textWidth / 2f) - paddingX).toInt()
+                val boxY = floor(-paddingY).toInt()
+                val boxW = ceil(textWidth + paddingX * 2f).toInt()
+                val boxH = ceil(9f + paddingY * 2f).toInt()
+
+                // No rounded-corners option: always render a simple rectangle.
+                safeFill(context, boxX, boxY, boxX + boxW, boxY + boxH, config.boxColor)
+            }
+
+            context.drawString(font, text, -(textWidth / 2f).toInt(), 0, config.color, true)
+        } finally {
+            // Ensure we never leave the pose stack unbalanced (can crash later frames).
+            pose.popMatrix()
         }
-
-        context.drawString(font, text, -(textWidth / 2).toInt(), 0, config.color, true)
-
-        pose.popMatrix()
     }
 
     private fun formatMoney(value: Float): String {
@@ -78,14 +94,13 @@ object DonationRenderer {
         }
     }
 
-    private fun drawRoundedRect(context: GuiGraphics, x: Int, y: Int, width: Int, height: Int, radius: Int, color: Int) {
-        context.fill(x + radius, y, x + width - radius, y + height, color)
-        context.fill(x, y + radius, x + radius, y + height - radius, color)
-        context.fill(x + width - radius, y + radius, x + width, y + height - radius, color)
 
-        context.fill(x + 1, y + 1, x + radius, y + radius, color)
-        context.fill(x + width - radius, y + 1, x + width - 1, y + radius, color)
-        context.fill(x + 1, y + height - radius, x + radius, y + height - 1, color)
-        context.fill(x + width - radius, y + height - radius, x + width - 1, y + height - 1, color)
+    private fun safeFill(context: GuiGraphics, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {
+        val left = min(x1, x2)
+        val right = maxOf(x1, x2)
+        val top = min(y1, y2)
+        val bottom = maxOf(y1, y2)
+        if (left == right || top == bottom) return
+        context.fill(left, top, right, bottom, color)
     }
 }

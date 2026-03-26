@@ -29,9 +29,6 @@ class DonationConfig {
     var noDonationText: String = "No Donation"
 
     @SerialEntry
-    var roundedCorners: Boolean = true
-
-    @SerialEntry
     var color: Int = Color.WHITE.rgb
 
     @SerialEntry
