@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.util.PlayerIdentityUtil
 import net.fabricmc.loader.api.FabricLoader
 import java.net.URI
 import java.net.http.HttpClient
@@ -31,7 +32,13 @@ object APIService {
             return null
         }
 
-        val apiUrl = "https://api.donutsmp.net/v1/stats/$username"
+        val normalizedUsername = PlayerIdentityUtil.normalizeUsernameForApi(username)
+        if (normalizedUsername.isNullOrBlank()) {
+            println("DonutSMP API stats request skipped: invalid username '$username'")
+            return null
+        }
+
+        val apiUrl = "https://api.donutsmp.net/v1/stats/$normalizedUsername"
         val request = HttpRequest.newBuilder()
             .uri(URI.create(apiUrl))
             .header("Authorization", "Bearer $apiKey")
