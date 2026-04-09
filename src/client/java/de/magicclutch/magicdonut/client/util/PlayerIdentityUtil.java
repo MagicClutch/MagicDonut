@@ -19,6 +19,13 @@ public final class PlayerIdentityUtil {
     private PlayerIdentityUtil() {
     }
 
+    /**
+     * Returns a canonical username suitable for API lookup and overhead stats cache keys.
+     *
+     * Decorations like ranks/prefixes/suffixes, emojis, symbols, etc. are ignored.
+     * The returned value is lowercased and hard-sanitized to an allowlist:
+     * letters, digits, underscore and dots (including leading dots for Bedrock names).
+     */
 
     public static String getCanonicalUsername(Entity entity) {
         if (entity == null) return null;
@@ -58,11 +65,7 @@ public final class PlayerIdentityUtil {
             if (isAllowedApiUsernameChar(c)) out.append(c);
         }
 
-        // Strip leading dots (treat as prefixes; keep dots inside the name).
-        int start = 0;
-        while (start < out.length() && out.charAt(start) == '.') start++;
-
-        String cleaned = out.substring(start);
+        String cleaned = out.toString();
         if (cleaned.isBlank()) return null;
 
         return cleaned.toLowerCase(Locale.ROOT);
