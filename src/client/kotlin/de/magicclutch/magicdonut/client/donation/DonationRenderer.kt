@@ -1,26 +1,28 @@
 package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.client.gui.screens.inventory.InventoryScreen
+import net.minecraft.resources.Identifier
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.min
 
 object DonationRenderer {
     fun register() {
-        HudRenderCallback.EVENT.register { context, _ ->
+        HudElementRegistry.attachElementAfter(VanillaHudElements.CHAT, Identifier.fromNamespaceAndPath("magicdonut", "donation_hud")) { context, _ ->
             val mc = Minecraft.getInstance()
             val config = MagicDonutConfig.instance.donationConfig
 
             // 1. Check: Ist das Modul überhaupt an?
-            if (!config.enabled) return@register
+            if (!config.enabled) return@attachElementAfter
 
             // 2. Check: Sind wir in einer Welt?
-            if (mc.level == null) return@register
+            if (mc.level == null) return@attachElementAfter
 
             val screen = mc.screen
             if (screen == null || screen is ChatScreen || screen is InventoryScreen || screen is PositionEditScreen) {
@@ -29,7 +31,7 @@ object DonationRenderer {
         }
     }
 
-    fun render(context: GuiGraphics) {
+    fun render(context: GuiGraphicsExtractor) {
         val mc = Minecraft.getInstance()
         val config = MagicDonutConfig.instance.donationConfig
         val donation = config.getHighestDonation()
@@ -78,7 +80,7 @@ object DonationRenderer {
                 safeFill(context, boxX, boxY, boxX + boxW, boxY + boxH, config.boxColor)
             }
 
-            context.drawString(font, text, -(textWidth / 2f).toInt(), 0, config.color, true)
+            context.text(font, text, -(textWidth / 2f).toInt(), 0, config.color, true)
         } finally {
             // Ensure we never leave the pose stack unbalanced (can crash later frames).
             pose.popMatrix()
@@ -95,7 +97,7 @@ object DonationRenderer {
     }
 
 
-    private fun safeFill(context: GuiGraphics, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {
+    private fun safeFill(context: GuiGraphicsExtractor, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {
         val left = min(x1, x2)
         val right = maxOf(x1, x2)
         val top = min(y1, y2)

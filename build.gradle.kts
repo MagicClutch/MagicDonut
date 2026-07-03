@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("fabric-loom") version "1.14-SNAPSHOT"
+    id("net.fabricmc.fabric-loom") version "1.17.13"
     id("maven-publish")
 }
 
@@ -14,7 +14,7 @@ base {
     archivesName.set(project.property("archives_base_name") as String)
 }
 
-val targetJavaVersion = 21
+val targetJavaVersion = 25
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
@@ -25,6 +25,13 @@ java {
 
 loom {
     splitEnvironmentSourceSets()
+
+    runs {
+        named("client") {
+            property("devauth.enabled", "1")
+            property("devauth.account", "main")
+        }
+    }
 
     mods {
         register("magicdonututils") {
@@ -41,13 +48,6 @@ fabricApi {
 }
 
 repositories {
-    maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1") {
-        name = "DevAuth"
-        content {
-            includeGroup("me.djtheredstoner")
-        }
-    }
-
     maven("https://maven.isxander.dev/releases") {
         name = "Xander Maven"
         content {
@@ -67,17 +67,16 @@ repositories {
 dependencies {
     // Minecraft and Fabric
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    mappings(loom.officialMojangMappings())
-    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    implementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
+    implementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
+    implementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
 
     // Config
-    modImplementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
-    modImplementation("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
+    implementation("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
 
-    // Dev Authentication to be able to test the mod on DonutSMP
-    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.2")
+    // Dev authentication for running the dev client with a Microsoft account.
+    localRuntime("net.litetex.mcm:dev-auth-neo:${project.property("devauth_neo_version")}")
 }
 
 tasks.processResources {

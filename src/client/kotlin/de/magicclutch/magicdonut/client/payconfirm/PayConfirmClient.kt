@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import de.magicclutch.magicdonut.client.MagicDonutClient
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
@@ -30,15 +30,15 @@ object PayConfirmClient {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
 
             dispatcher.register(
-                ClientCommandManager.literal("pay")
+                ClientCommands.literal("pay")
                     .executes { context ->
 
                         val msg = "§cSyntax: /pay <player> <amount>"
                         context.source.sendFeedback(Component.literal(msg))
                         Command.SINGLE_SUCCESS
                     }
-                    .then(ClientCommandManager.argument("target", StringArgumentType.word())
-                        .then(ClientCommandManager.argument("amount", StringArgumentType.string())
+                    .then(ClientCommands.argument("target", StringArgumentType.word())
+                        .then(ClientCommands.argument("amount", StringArgumentType.string())
                             .executes { context ->
                                 val target = StringArgumentType.getString(context, "target")
                                 val amountStr = StringArgumentType.getString(context, "amount")
@@ -49,7 +49,7 @@ object PayConfirmClient {
             )
 
             dispatcher.register(
-                ClientCommandManager.literal("payconfirm").executes { context ->
+                ClientCommands.literal("payconfirm").executes { context ->
                     val cmd = pendingCommand
                     if (cmd != null) {
                         Minecraft.getInstance().player?.connection?.send(ServerboundChatCommandPacket(cmd))
@@ -62,7 +62,7 @@ object PayConfirmClient {
             )
 
             dispatcher.register(
-                ClientCommandManager.literal("paycancel").executes { context ->
+                ClientCommands.literal("paycancel").executes { context ->
                     if (pendingCommand != null) {
                         cancelPending()
                         context.source.sendFeedback(Component.literal("§l§4Payment cancelled."))

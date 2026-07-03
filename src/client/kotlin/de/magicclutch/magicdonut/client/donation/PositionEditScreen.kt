@@ -2,7 +2,7 @@ package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.client.gui.screens.Screen
@@ -66,8 +66,8 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
         )
     }
 
-    override fun render(context: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
-        super.render(context, mouseX, mouseY, delta)
+    override fun extractRenderState(context: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, delta: Float) {
+        super.extractRenderState(context, mouseX, mouseY, delta)
 
         // Render the overlay preview even while editing (DonationRenderer already checks enabled + world).
         val mc = Minecraft.getInstance()
@@ -77,7 +77,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
         }
 
         val hintY = (height - 20).coerceAtLeast(0)
-        context.drawString(mc.font, "Scroll Wheel: Change size", 10, hintY, 0xAAAAAA)
+        context.text(mc.font, "Scroll Wheel: Change size", 10, hintY, 0xAAAAAA)
     }
 
     override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {

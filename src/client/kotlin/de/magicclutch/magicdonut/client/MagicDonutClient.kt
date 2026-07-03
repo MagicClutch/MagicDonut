@@ -12,7 +12,7 @@ import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.client.KeyMapping
 import net.minecraft.network.chat.Component
@@ -54,7 +54,7 @@ class MagicDonutClient : ClientModInitializer {
 
     companion object {
         private val category = KeyMapping.Category.MISC
-        val payButtonBinding: KeyMapping = KeyBindingHelper.registerKeyBinding(
+        val payButtonBinding: KeyMapping = KeyMappingHelper.registerKeyMapping(
             KeyMapping(
                 "magicdonut.quickpay",
                 GLFW.GLFW_KEY_LEFT_CONTROL,

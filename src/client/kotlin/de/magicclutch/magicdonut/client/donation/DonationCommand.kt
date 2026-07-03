@@ -2,7 +2,7 @@ package de.magicclutch.magicdonut.client.donation
 
 import com.mojang.brigadier.CommandDispatcher
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.minecraft.commands.CommandBuildContext

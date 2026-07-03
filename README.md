@@ -1,11 +1,11 @@
-# MagicDonutUtils (MC 1.21.11)
+# MagicDonutUtils (MC 26.1.2)
 
 Client-side utility mod for **DonutSMP**.
 
 - **Mod id:** `magicdonututils`
-- **Minecraft:** `1.21.11`
+- **Minecraft:** `26.1.2`
 - **Loader:** Fabric
-- **Java:** 21
+- **Java:** 25
 
 ## Features
 
@@ -52,18 +52,18 @@ This feature uses the DonutSMP API:
 
 ## Installation (Players)
 
-1. Install **Fabric Loader** for Minecraft `1.21.11`.
+1. Install **Fabric Loader** for Minecraft `26.1.2`.
 2. Put `MagicDonutUtils` and its dependencies into your `.minecraft/mods` folder.
 3. Launch the game.
 
 ### Dependencies
 Required:
-- Fabric API (dev version used here: `0.141.3+1.21.11`)
+- Fabric API (dev version used here: `0.154.0+26.1.2`)
 - Fabric Language Kotlin (dev version used here: `1.13.9+kotlin.2.3.10`)
-- YetAnotherConfigLib v3 / YACL (dev version used here: `3.8.2+1.21.11-fabric`)
+- YetAnotherConfigLib v3 / YACL (dev version used here: `3.9.4+26.1-fabric`)
 
 Optional (but recommended):
-- Mod Menu (dev version used here: `17.0.0-beta.2`) for a convenient config button
+- Mod Menu (dev version used here: `18.0.0-beta.1`) for a convenient config button
 
 ## Configuration
 
@@ -93,12 +93,12 @@ Overhead Stats requires a DonutSMP API key.
 ## Development Setup (Build From Source)
 
 Prerequisites:
-- JDK 21 installed
+- JDK 25 installed
 
 Common tasks (Windows PowerShell):
 
 ```powershell
-cd C:\Users\elias\IdeaProjects\MagicDonutUtils-1.21.11
+cd C:\Users\elias\IdeaProjects\MagicDonut
 .\gradlew.bat runClient
 .\gradlew.bat build
 ```
@@ -108,7 +108,8 @@ Build output:
 
 Notes:
 - The project uses Fabric Loom with split `main` and `client` source sets.
-- `DevAuth` is included as a **runtime-only** dependency for development/login convenience; it is not required for normal players.
+- `DevAuth Neo` is included as a local runtime dependency for development/login convenience; it is not required for normal players.
+- `runClient` starts with DevAuth enabled and account label `main`. On first launch, follow the login prompt; tokens are stored under `%USERPROFILE%\.dev-auth-neo`.
 
 ## Troubleshooting
 

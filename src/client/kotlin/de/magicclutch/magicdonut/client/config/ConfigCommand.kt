@@ -2,7 +2,7 @@ package de.magicclutch.magicdonut.client.config
 
 import com.mojang.brigadier.CommandDispatcher
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 
 class ConfigCommand {
@@ -11,7 +11,7 @@ class ConfigCommand {
             dispatcher: CommandDispatcher<FabricClientCommandSource>
         ) {
             dispatcher.register(
-                ClientCommandManager.literal("magicdonututils")
+                ClientCommands.literal("magicdonututils")
                     .executes { _ ->
                         val client = MinecraftClientService.client
                         val currentScreen = client.screen
