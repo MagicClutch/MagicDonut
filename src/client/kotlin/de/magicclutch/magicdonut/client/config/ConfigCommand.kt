@@ -14,11 +14,11 @@ class ConfigCommand {
                 ClientCommands.literal("magicdonututils")
                     .executes { _ ->
                         val client = MinecraftClientService.client
-                        val currentScreen = client.screen
+                        val currentScreen = client.gui.screen()
 
                         if (currentScreen != null) {
                             client.schedule {
-                                client.setScreen(
+                                client.gui.setScreen(
                                     MagicDonutConfig.createGUI(currentScreen)
                                 )
                             }

@@ -71,7 +71,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
 
         // Render the overlay preview even while editing (DonationRenderer already checks enabled + world).
         val mc = Minecraft.getInstance()
-        val screen = mc.screen
+        val screen = mc.gui.screen()
         if (screen == null || screen is ChatScreen || screen is InventoryScreen || screen is PositionEditScreen) {
             DonationRenderer.render(context)
         }

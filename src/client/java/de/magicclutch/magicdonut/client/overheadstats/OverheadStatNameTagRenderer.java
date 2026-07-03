@@ -90,7 +90,7 @@ public final class OverheadStatNameTagRenderer {
 
         matrices.pushPose();
         matrices.scale(scale, scale, scale);
-        queue.submitNameTag(matrices, statPos, 0, statText, notSneaking, light, state.distanceToCameraSq, cameraState);
+        queue.submitNameTag(matrices, statPos, 0, statText, notSneaking, light, cameraState);
         matrices.popPose();
     }
 }

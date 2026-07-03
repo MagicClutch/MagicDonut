@@ -24,7 +24,7 @@ object DonationRenderer {
             // 2. Check: Sind wir in einer Welt?
             if (mc.level == null) return@attachElementAfter
 
-            val screen = mc.screen
+            val screen = mc.gui.screen()
             if (screen == null || screen is ChatScreen || screen is InventoryScreen || screen is PositionEditScreen) {
                 render(context)
             }

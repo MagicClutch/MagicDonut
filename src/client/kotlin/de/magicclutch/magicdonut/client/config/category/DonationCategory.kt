@@ -39,7 +39,7 @@ object DonationCategory {
             .description(OptionDescription.of(Component.translatable("Open Editor")))
             .action { _, _ ->
                 val client = Minecraft.getInstance()
-                client.execute { client.setScreen(PositionEditScreen()) }
+                client.execute { client.gui.setScreen(PositionEditScreen()) }
             }
             .build()
 

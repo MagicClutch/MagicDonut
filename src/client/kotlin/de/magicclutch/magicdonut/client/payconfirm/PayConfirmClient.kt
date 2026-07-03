@@ -79,7 +79,7 @@ object PayConfirmClient {
 
             val target = entity as? Player ?: return@register InteractionResult.PASS
 
-            MinecraftClientService.client.setScreen(
+            MinecraftClientService.client.gui.setScreen(
                 ChatScreen("/pay ${target.name.string} ", false)
             )
 

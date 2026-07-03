@@ -73,7 +73,7 @@ dependencies {
 
     // Config
     implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
-    implementation("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
 
     // Dev authentication for running the dev client with a Microsoft account.
     localRuntime("net.litetex.mcm:dev-auth-neo:${project.property("devauth_neo_version")}")

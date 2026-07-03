@@ -14,7 +14,7 @@ object MinecraftClientService {
         }
 
     fun sendChatMessage(component: Component) {
-        client.chatListener.handleSystemMessage(
+        client.gui.chatListener().handleSystemMessage(
             component,
             false
         )
