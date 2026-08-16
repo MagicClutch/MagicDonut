@@ -1,4 +1,4 @@
-# MagicDonutUtils (MC 1.21.11)
+# MagicDonutUtils
 
 Client-side utility mod for **DonutSMP**.
 
