@@ -69,6 +69,9 @@ This feature uses the DonutSMP API:
 2. Put `MagicDonutUtils` and its dependencies into your `.minecraft/mods` folder.
 3. Launch the game.
 
+### Settings (YACL, Mod Menu and OneConfig)
+Settings open from Mod Menu (YACL) or the `/magicdonututils` command. If [OneConfig](https://modrinth.com/mod/oneconfig) (with Compose Multiplatform) is installed, MagicDonutUtils also shows up in its settings screen with its own layout: one section per feature, descriptions, color pickers, sliders and action buttons. OneConfig is optional. Both screens edit the same `magicdonut.json5`, so they always show the same values.
+
 ### Dependencies
 Required:
 - Fabric API (dev version used here: `0.166.2+26.3`)

@@ -24,6 +24,9 @@
     "main": [
       "de.magicclutch.magicdonut.MagicDonut"
     ],
+    "oneconfig:config": [
+      "de.magicclutch.magicdonut.client.config.oneconfig.OneConfigEntrypoint"
+    ],
     "modmenu": [
       "de.magicclutch.magicdonut.client.config.ModMenuIntegration"
     ]
@@ -43,7 +46,8 @@
     "yet_another_config_lib_v3": ">=${yacl_version}"
   },
   "suggests": {
-    "modmenu": ">=${modmenu_version}"
+    "modmenu": ">=${modmenu_version}",
+    "oneconfig": "*"
   },
   "custom": {
     "modmenu": {

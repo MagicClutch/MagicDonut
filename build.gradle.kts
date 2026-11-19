@@ -49,6 +49,14 @@ repositories {
         }
     }
 
+    maven("https://repo.polyfrost.org/releases") {
+        name = "Polyfrost"
+        content {
+            includeGroup("org.polyfrost")
+            includeGroup("org.polyfrost.oneconfig")
+        }
+    }
+
     maven("https://maven.terraformersmc.com/releases/") {
         name = "Terraformers"
         content {
@@ -67,6 +75,11 @@ dependencies {
     // Config
     implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
     compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+
+    // OneConfig is optional at runtime: the native layout only loads when it is installed.
+    for (module in listOf("config-impl", "config", "poly-compose", "utils", "ui")) {
+        compileOnly("org.polyfrost.oneconfig:$module:${project.property("oneconfig_version")}") { isTransitive = false }
+    }
 }
 
 tasks.processResources {
