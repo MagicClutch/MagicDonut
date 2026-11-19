@@ -4,6 +4,7 @@ import com.google.gson.JsonElement
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
+import com.mojang.blaze3d.platform.InputConstants
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.minecraft.client.KeyMapping
@@ -17,7 +18,7 @@ import java.util.concurrent.Executors
 object ProfitTracker {
     // Unbound by default; players pick their own key in the controls screen.
     val toggleBinding: KeyMapping = KeyMappingHelper.registerKeyMapping(
-        KeyMapping("magicdonut.toggle_profit", -1, KeyMapping.Category.MISC)
+        KeyMapping("magicdonut.toggle_profit", InputConstants.UNKNOWN.value, KeyMapping.Category.MISC)
     )
 
     private val config get() = MagicDonutConfig.instance.profitConfig
