@@ -40,7 +40,7 @@ class MagicDonutClient : ClientModInitializer {
             if(matcher.find()) {
                 val apiKey = matcher.group(2)
                 MagicDonutConfig.instance.developmentConfig.apiKey = apiKey
-                MagicDonutConfig.HANDLER.save()
+                MagicDonutConfig.save()
                 MinecraftClientService.sendChatMessage(
                     Component.literal("[MagicDonutUtils] API-Key saved ✓").withStyle(ChatFormatting.GREEN)
                 )

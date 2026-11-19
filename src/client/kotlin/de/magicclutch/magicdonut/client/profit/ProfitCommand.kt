@@ -61,7 +61,7 @@ object ProfitCommand {
     private fun toggle(context: CommandContext<FabricClientCommandSource>): Int {
         val config = MagicDonutConfig.instance.profitConfig
         config.enabled = !config.enabled
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
         info(context.source, "Daily balance HUD ${if (config.enabled) "enabled" else "disabled"}.")
         return Command.SINGLE_SUCCESS
     }

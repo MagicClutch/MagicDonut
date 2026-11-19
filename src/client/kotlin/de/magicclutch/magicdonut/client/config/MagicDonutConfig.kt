@@ -1,13 +1,8 @@
 package de.magicclutch.magicdonut.client.config
 
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import de.magicclutch.magicdonut.client.config.category.AuctionCategory
-import de.magicclutch.magicdonut.client.config.category.DevelopmentCategory
-import de.magicclutch.magicdonut.client.config.category.DonationCategory
-import de.magicclutch.magicdonut.client.config.category.GambleCategory
-import de.magicclutch.magicdonut.client.config.category.OverheadStatsCategory
-import de.magicclutch.magicdonut.client.config.category.PayConfirmCategory
-import de.magicclutch.magicdonut.client.config.category.ProfitCategory
+import com.google.gson.stream.JsonReader
 import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
@@ -15,70 +10,76 @@ import de.magicclutch.magicdonut.client.config.configuration.GambleConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
 import de.magicclutch.magicdonut.client.config.configuration.ProfitConfig
-import dev.isxander.yacl3.api.YetAnotherConfigLib
-import dev.isxander.yacl3.config.v2.api.ConfigClassHandler
-import dev.isxander.yacl3.config.v2.api.SerialEntry
-import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.client.gui.screens.Screen
-import net.minecraft.network.chat.Component
+import org.slf4j.LoggerFactory
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
+/**
+ * All settings of the mod, stored as one JSON file (`config/magicdonut.json5`). Missing fields keep their defaults,
+ * so new settings never break an existing file.
+ */
 class MagicDonutConfig {
+    var developmentConfig: DevelopmentConfig = DevelopmentConfig()
+    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig()
+    var donationConfig: DonationConfig = DonationConfig()
+    var overheadStatsConfig: OverheadStatsConfig = OverheadStatsConfig()
+    var auctionConfig: AuctionConfig = AuctionConfig()
+    var gambleConfig: GambleConfig = GambleConfig()
+    var profitConfig: ProfitConfig = ProfitConfig()
+
     companion object {
-        val HANDLER: ConfigClassHandler<MagicDonutConfig> =
-            ConfigClassHandler.createBuilder<MagicDonutConfig>(MagicDonutConfig::class.java)
-                .serializer { config ->
-                    GsonConfigSerializerBuilder.create<MagicDonutConfig>(config)
-                        .setPath(FabricLoader.getInstance().configDir.resolve("magicdonut.json5"))
-                        .appendGsonBuilder(GsonBuilder::setPrettyPrinting)
-                        .setJson5(true)
-                        .build()
-                }
-                .build()
+        private val logger = LoggerFactory.getLogger("MagicDonutUtils/Config")
+        private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
-        val instance: MagicDonutConfig
-            get() = HANDLER.instance()
+        private val path: Path
+            get() = FabricLoader.getInstance().configDir.resolve("magicdonut.json5")
 
-        init {
-            HANDLER.load()
+        @Volatile
+        var instance: MagicDonutConfig = load()
+            private set
+
+        private fun load(): MagicDonutConfig {
+            val file = path
+            if (!Files.exists(file)) return MagicDonutConfig().also { write(it) }
+            return try {
+                Files.newBufferedReader(file).use { reader ->
+                    // Lenient: also reads the JSON5 style files written by older versions of the mod.
+                    val json = JsonReader(reader).apply { isLenient = true }
+                    gson.fromJson<MagicDonutConfig>(json, MagicDonutConfig::class.java) ?: MagicDonutConfig()
+                }.also { write(it) } // re-save so new settings show up in the file
+            } catch (e: Exception) {
+                logger.error("Could not read {}, using defaults (the broken file is kept as .broken)", file, e)
+                runCatching { Files.move(file, file.resolveSibling("magicdonut.json5.broken"), StandardCopyOption.REPLACE_EXISTING) }
+                MagicDonutConfig()
+            }
         }
 
-        fun createGUI(parent: Screen?): Screen {
-            return YetAnotherConfigLib.create<MagicDonutConfig>(
-                HANDLER
-            ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->
-                builder.title(Component.translatable("magicdonut.config.title"))
-                    .category(PayConfirmCategory.create(defaults, config))
-                    .category(DonationCategory.create(defaults, config))
-                    .category(OverheadStatsCategory.create(defaults, config))
-                    .category(AuctionCategory.create(defaults, config))
-                    .category(GambleCategory.create(defaults, config))
-                    .category(ProfitCategory.create(defaults, config))
-                    .category(DevelopmentCategory.create(defaults, config))
+        /** Re-reads the file, for example after the user edited it by hand. */
+        fun reload() {
+            instance = load()
+        }
 
+        @Synchronized
+        fun save() = write(instance)
 
-            }.generateScreen(parent)
+        @Synchronized
+        private fun write(config: MagicDonutConfig) {
+            val file = path
+            try {
+                Files.createDirectories(file.parent)
+                val tmp = file.resolveSibling("magicdonut.json5.tmp")
+                Files.writeString(tmp, gson.toJson(config))
+                try {
+                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                } catch (_: AtomicMoveNotSupportedException) {
+                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING)
+                }
+            } catch (e: Exception) {
+                logger.error("Could not save {}", file, e)
+            }
         }
     }
-
-    @SerialEntry
-    var developmentConfig: DevelopmentConfig = DevelopmentConfig()
-
-    @SerialEntry
-    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig()
-
-    @SerialEntry
-    var donationConfig: DonationConfig = DonationConfig()
-
-    @SerialEntry
-    var overheadStatsConfig: OverheadStatsConfig = OverheadStatsConfig()
-
-    @SerialEntry
-    var auctionConfig: AuctionConfig = AuctionConfig()
-
-    @SerialEntry
-    var gambleConfig: GambleConfig = GambleConfig()
-
-    @SerialEntry
-    var profitConfig: ProfitConfig = ProfitConfig()
 }

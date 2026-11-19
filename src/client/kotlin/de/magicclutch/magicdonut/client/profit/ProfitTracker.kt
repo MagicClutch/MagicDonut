@@ -47,7 +47,7 @@ object ProfitTracker {
         ClientTickEvents.END_CLIENT_TICK.register { client ->
             while (toggleBinding.consumeClick()) {
                 config.enabled = !config.enabled
-                MagicDonutConfig.HANDLER.save()
+                MagicDonutConfig.save()
             }
 
             if (client.level == null) {
@@ -83,7 +83,7 @@ object ProfitTracker {
     fun resetBaseline() {
         config.startBalance = -1.0
         config.startDate = ""
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
     }
 
     private fun onBalance(balance: Double) {
@@ -97,7 +97,7 @@ object ProfitTracker {
     private fun setBaseline(balance: Double) {
         config.startBalance = balance
         config.startDate = LocalDate.now().toString()
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
     }
 
     private fun parseDouble(element: JsonElement): Double? {

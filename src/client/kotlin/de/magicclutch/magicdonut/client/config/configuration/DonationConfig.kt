@@ -2,39 +2,27 @@ package de.magicclutch.magicdonut.client.config.configuration
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.donation.Donation
-import dev.isxander.yacl3.config.v2.api.SerialEntry
 import java.awt.Color
 
 class DonationConfig {
-    @SerialEntry
     var enabled: Boolean = true // Der neue An/Aus Schalter
 
-    @SerialEntry
     var highestDonationPlayer: String? = null
-    @SerialEntry
     var highestDonationAmount: Double = 0.0
 
-    @SerialEntry
     var x: Float = 0.5f
-    @SerialEntry
     var y: Float = 0.05f
 
-    @SerialEntry
     var size: Float = 1.0F
 
-    @SerialEntry
     var customTitle: String = "Highest Donation"
 
-    @SerialEntry
     var noDonationText: String = "No Donation"
 
-    @SerialEntry
     var color: Int = Color.WHITE.rgb
 
-    @SerialEntry
     var showBox: Boolean = true
 
-    @SerialEntry
     var boxColor: Int = Color(192, 192, 192, 150).rgb
 
 
@@ -46,12 +34,12 @@ class DonationConfig {
     fun setHighestDonation(donation: Donation) {
         highestDonationPlayer = donation.playerName
         highestDonationAmount = donation.amount
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
     }
 
     fun reset() {
         highestDonationPlayer = null
         highestDonationAmount = 0.0
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
     }
 }

@@ -31,8 +31,8 @@ Hold an item and run `/auction start [seconds] [minBid]`. A floating item panel 
 - `/auction announce` posts the auction in public chat
 - Display only: nothing is paid or refunded automatically, refunding losing bidders is up to you.
 
-### Gamble simulator (offline)
-`/gamble` opens a casino with a **virtual balance**: coinflip, dice and slots, plus win statistics. It never touches the server or real money.
+### Slot machine (offline)
+`/gamble` opens a slot machine built from Minecraft items (nether star, diamond, emerald, gold, redstone) with spinning reels, a payout table and win statistics, played with a **virtual balance**. It never touches the server or real money.
 
 ### API key
 Only overhead stats need a DonutSMP API key (limited to ranked players and approved projects). All other features work without one.
@@ -69,14 +69,13 @@ This feature uses the DonutSMP API:
 2. Put `MagicDonutUtils` and its dependencies into your `.minecraft/mods` folder.
 3. Launch the game.
 
-### Settings (YACL, Mod Menu and OneConfig)
-Settings open from Mod Menu (YACL) or the `/magicdonututils` command. If [OneConfig](https://modrinth.com/mod/oneconfig) (with Compose Multiplatform) is installed, MagicDonutUtils also shows up in its settings screen with its own layout: one section per feature, descriptions, color pickers, sliders and action buttons. OneConfig is optional. Both screens edit the same `magicdonut.json5`, so they always show the same values.
+### Settings screen
+A custom purple settings screen made for this mod: a home page with a tile for every feature (quick on/off switches and a Play button), one page per feature, a search box across all settings, animated toggles, sliders, color fields and action buttons. Open it with `/magicdonututils` or the config button in Mod Menu. Everything is saved to `config/magicdonut.json5`.
 
 ### Dependencies
 Required:
 - Fabric API (dev version used here: `0.166.2+26.3`)
 - Fabric Language Kotlin (dev version used here: `1.13.9+kotlin.2.3.10`)
-- YetAnotherConfigLib v3 / YACL (dev version used here: `3.9.7+26.3-fabric`)
 
 Optional (but recommended):
 - Mod Menu (dev version used here: `18.0.0-beta.1`) for a convenient config button

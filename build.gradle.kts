@@ -41,21 +41,7 @@ fabricApi {
 }
 
 repositories {
-    maven("https://maven.isxander.dev/releases") {
-        name = "Xander Maven"
-        content {
-            includeGroup("dev.isxander")
-            includeGroup("org.quiltmc.parsers")
-        }
-    }
 
-    maven("https://repo.polyfrost.org/releases") {
-        name = "Polyfrost"
-        content {
-            includeGroup("org.polyfrost")
-            includeGroup("org.polyfrost.oneconfig")
-        }
-    }
 
     maven("https://maven.terraformersmc.com/releases/") {
         name = "Terraformers"
@@ -72,21 +58,15 @@ dependencies {
     implementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
 
-    // Config
-    implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
+    // Mod Menu entry (optional at runtime)
     compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
 
-    // OneConfig is optional at runtime: the native layout only loads when it is installed.
-    for (module in listOf("config-impl", "config", "poly-compose", "utils", "ui")) {
-        compileOnly("org.polyfrost.oneconfig:$module:${project.property("oneconfig_version")}") { isTransitive = false }
-    }
 }
 
 tasks.processResources {
     inputs.property("version", project.version)
     inputs.property("minecraft_version", project.property("minecraft_version"))
     inputs.property("loader_version", project.property("loader_version"))
-    inputs.property("yacl_version", project.property("yacl_version"))
     inputs.property("modmenu_version", project.property("modmenu_version"))
     filteringCharset = "UTF-8"
 
@@ -96,7 +76,6 @@ tasks.processResources {
             "minecraft_version" to project.property("minecraft_version")!!,
             "loader_version" to project.property("loader_version")!!,
             "kotlin_loader_version" to project.property("kotlin_loader_version")!!,
-            "yacl_version" to project.property("yacl_version")!!,
             "modmenu_version" to project.property("modmenu_version")!!
         )
     }

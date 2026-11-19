@@ -45,14 +45,14 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
         addRenderableWidget(
             Button.builder(Component.literal("Center X")) {
                 config.x = 0.5f
-                MagicDonutConfig.HANDLER.save()
+                MagicDonutConfig.save()
             }.pos(startX, 10).size(buttonWidth, buttonHeight).build()
         )
 
         addRenderableWidget(
             Button.builder(Component.literal("Center Y")) {
                 config.y = 0.5f
-                MagicDonutConfig.HANDLER.save()
+                MagicDonutConfig.save()
             }.pos(startX, 10 + buttonHeight + spacing).size(buttonWidth, buttonHeight).build()
         )
 
@@ -61,7 +61,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
                 config.x = 0.5f
                 config.y = 0.05f
                 config.size = 1.0f
-                MagicDonutConfig.HANDLER.save()
+                MagicDonutConfig.save()
             }.pos(startX, 10 + (buttonHeight + spacing) * 2).size(buttonWidth, buttonHeight).build()
         )
     }
@@ -85,7 +85,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
         if (rect != null && rect.contains(mouseX, mouseY)) {
             val delta = (verticalAmount * 0.1).toFloat()
             config.size = (config.size + delta).coerceIn(0.5f, 4.0f)
-            MagicDonutConfig.HANDLER.save()
+            MagicDonutConfig.save()
             return true
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)
@@ -111,7 +111,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
         if (isDragging) {
             isDragging = false
-            MagicDonutConfig.HANDLER.save()
+            MagicDonutConfig.save()
         }
         return super.mouseReleased(event)
     }
@@ -147,7 +147,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
 
     override fun onClose() {
         isDragging = false
-        MagicDonutConfig.HANDLER.save()
+        MagicDonutConfig.save()
         super.onClose()
     }
 
