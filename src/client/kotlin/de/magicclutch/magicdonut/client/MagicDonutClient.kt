@@ -16,7 +16,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.client.KeyMapping
 import net.minecraft.network.chat.Component
-import org.lwjgl.glfw.GLFW
 
 class MagicDonutClient : ClientModInitializer {
     override fun onInitializeClient() {
@@ -57,7 +56,7 @@ class MagicDonutClient : ClientModInitializer {
         val payButtonBinding: KeyMapping = KeyMappingHelper.registerKeyMapping(
             KeyMapping(
                 "magicdonut.quickpay",
-                GLFW.GLFW_KEY_LEFT_CONTROL,
+                InputConstants.KEY_LCONTROL,
                 category
             )
         )

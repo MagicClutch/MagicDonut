@@ -1,9 +1,9 @@
-# MagicDonutUtils (MC 26.2)
+# MagicDonutUtils (MC 26.3)
 
 Client-side utility mod for **DonutSMP**.
 
 - **Mod id:** `magicdonututils`
-- **Minecraft:** `26.2`
+- **Minecraft:** `26.3`
 - **Loader:** Fabric
 - **Java:** 25
 
@@ -52,15 +52,15 @@ This feature uses the DonutSMP API:
 
 ## Installation (Players)
 
-1. Install **Fabric Loader** for Minecraft `26.2`.
+1. Install **Fabric Loader** for Minecraft `26.3`.
 2. Put `MagicDonutUtils` and its dependencies into your `.minecraft/mods` folder.
 3. Launch the game.
 
 ### Dependencies
 Required:
-- Fabric API (dev version used here: `0.154.0+26.2`)
+- Fabric API (dev version used here: `0.166.2+26.3`)
 - Fabric Language Kotlin (dev version used here: `1.13.9+kotlin.2.3.10`)
-- YetAnotherConfigLib v3 / YACL (dev version used here: `3.9.4+26.1-fabric`)
+- YetAnotherConfigLib v3 / YACL (dev version used here: `3.9.7+26.3-fabric`)
 
 Optional (but recommended):
 - Mod Menu (dev version used here: `18.0.0-beta.1`) for a convenient config button

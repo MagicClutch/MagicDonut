@@ -272,7 +272,6 @@ object StatsRenderer {
             StatField.KILLS -> 0xFF5555 // red
             StatField.SHARDS -> 0xAA00AA // purple
             StatField.PLAYTIME -> 0xFFFF55 // yellow
-            else -> 0xFFFFFF
         }
     }
 }
