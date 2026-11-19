@@ -1,31 +1,31 @@
 package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.minecraft.network.chat.Component
 
 object DonationManager {
     private val config get() = MagicDonutConfig.instance.donationConfig
 
-    // Neuer Regex: Sucht nach Zahl + optionalem Suffix (k, m, b)
-    // Capture the full name token (Bedrock players can have a leading '.', e.g. ".name").
-    private val regex = Regex("([^\\s]+) paid you \\$(\\d+(?:\\.\\d+)?)\\s*([kmbKMB]?)")
+    // "<name> paid you $<number>[k|m|b]". The name token may start with '.' (Bedrock players),
+    // the number may contain thousands separators ("1,000").
+    private val regex = Regex("""(\S+) paid you \$(\d[\d,]*(?:\.\d+)?)\s*([kmbKMB]?)""")
 
     fun handleChatMessage(message: Component) {
-        val textContent = message.string
-        val match = regex.find(textContent) ?: return
+        if (!MinecraftClientService.isOnDonut) return
+
+        val match = regex.find(message.string) ?: return
 
         val playerName = match.groupValues[1]
-        var amount = match.groupValues[2].toFloat()
-        val suffix = match.groupValues[3].lowercase()
-
-        amount *= when (suffix) {
+        val base = match.groupValues[2].replace(",", "").toDoubleOrNull() ?: return
+        val multiplier = when (match.groupValues[3].lowercase()) {
             "k" -> 1_000.0
             "m" -> 1_000_000.0
             "b" -> 1_000_000_000.0
             else -> 1.0
-        }.toFloat()
+        }
 
-        val newDonation = Donation(playerName, amount)
+        val newDonation = Donation(playerName, base * multiplier)
         val currentHighest = config.getHighestDonation()
         if (currentHighest == null || newDonation.amount > currentHighest.amount) {
             config.setHighestDonation(newDonation)

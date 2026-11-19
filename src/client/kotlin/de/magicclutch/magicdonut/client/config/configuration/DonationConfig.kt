@@ -12,7 +12,7 @@ class DonationConfig {
     @SerialEntry
     var highestDonationPlayer: String? = null
     @SerialEntry
-    var highestDonationAmount: Float = 0.0F
+    var highestDonationAmount: Double = 0.0
 
     @SerialEntry
     var x: Float = 0.5f
@@ -51,7 +51,7 @@ class DonationConfig {
 
     fun reset() {
         highestDonationPlayer = null
-        highestDonationAmount = 0.0F
+        highestDonationAmount = 0.0
         MagicDonutConfig.HANDLER.save()
     }
 }

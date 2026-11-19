@@ -109,8 +109,10 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
     }
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        isDragging = false
-        MagicDonutConfig.HANDLER.save()
+        if (isDragging) {
+            isDragging = false
+            MagicDonutConfig.HANDLER.save()
+        }
         return super.mouseReleased(event)
     }
 
@@ -158,21 +160,13 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
     private fun computeText(): String {
         val donation = config.getHighestDonation()
         val contentText = if (donation != null) {
-            "${donation.playerName} : ${formatMoney(donation.amount)}"
+            "${donation.playerName} : ${Donation.formatMoney(donation.amount)}"
         } else {
             config.noDonationText
         }
         return "${config.customTitle}: $contentText"
     }
 
-    private fun formatMoney(value: Float): String {
-        return when {
-            value >= 1_000_000_000 -> String.format("%.2fB$", value / 1_000_000_000.0)
-            value >= 1_000_000 -> String.format("%.2fM$", value / 1_000_000.0)
-            value >= 1_000 -> String.format("%.2fK$", value / 1_000.0)
-            else -> String.format("%.2f$", value)
-        }
-    }
 
     private fun computeLocalBounds(textWidth: Double): LocalRect {
         val paddingX = 6.0

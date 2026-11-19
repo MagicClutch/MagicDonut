@@ -2,6 +2,7 @@ package de.magicclutch.magicdonut.client.overheadstats
 
 import com.google.gson.JsonElement
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig.DisplayMode
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig.StatField
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
@@ -34,7 +35,10 @@ object StatsRenderer {
 
     private const val LOADING_COLOR = 0x808080
 
-    private val executor = Executors.newFixedThreadPool(2)
+    // Daemon threads so pending API calls never keep the JVM alive on shutdown.
+    private val executor = Executors.newFixedThreadPool(2) { runnable ->
+        Thread(runnable, "MagicDonutUtils-Stats").apply { isDaemon = true }
+    }
     private val lastUpdateTimes = ConcurrentHashMap<String, Long>()
     private val requestCounter = AtomicInteger(0)
     private var lastCounterReset = System.currentTimeMillis()
@@ -49,23 +53,23 @@ object StatsRenderer {
     private const val MAX_REQUESTS_PER_MINUTE_MIN = 1
     private const val MAX_REQUESTS_PER_MINUTE_MAX = 250
 
+    private fun clearTracking() {
+        allowedPlayers = emptySet()
+        allowedPlayerCount = 0
+    }
+
     fun init() {
         ClientTickEvents.END_CLIENT_TICK.register {
-            if (!MinecraftClientService.isOnDonut) {
-                allowedPlayers = emptySet()
-                allowedPlayerCount = 0
+            val level = Minecraft.getInstance().level
+            if (level == null) {
+                // Left the world: drop everything so the caches don't grow across sessions.
+                clearTracking()
+                StatsCache.clear()
+                lastUpdateTimes.clear()
                 return@register
             }
-            val mc = Minecraft.getInstance()
-            val level = mc.level ?: run {
-                allowedPlayers = emptySet()
-                allowedPlayerCount = 0
-                return@register
-            }
-            val cfg = MagicDonutConfig.instance.overheadStatsConfig
-            if (!cfg.enabled) {
-                allowedPlayers = emptySet()
-                allowedPlayerCount = 0
+            if (!MinecraftClientService.isOnDonut || !MagicDonutConfig.instance.overheadStatsConfig.enabled) {
+                clearTracking()
                 return@register
             }
 
@@ -147,7 +151,8 @@ object StatsRenderer {
             cache.loading = true
             executor.submit {
                 try {
-                    cache.data = APIService.getStats(normalizedName)
+                    // Keep the previous value when a refresh fails instead of flashing back to "???".
+                    APIService.getStats(normalizedName)?.let { cache.data = it }
                 } finally {
                     cache.loading = false
                 }
@@ -175,7 +180,7 @@ object StatsRenderer {
         val text = when (stat) {
             StatField.PLAYTIME -> formatPlaytime(value)
             else -> {
-                val prefix = if (stat.name.lowercase().contains("money")) "$" else ""
+                val prefix = if (stat == StatField.MONEY) "$" else ""
                 "$prefix${formatNumber(value)}"
             }
         }
@@ -214,10 +219,10 @@ object StatsRenderer {
     private fun formatNumber(value: Double): String {
         val absVal = abs(value)
         return when {
-            absVal >= 1_000_000_000 -> "%.2fB".format(value / 1_000_000_000.0)
-            absVal >= 1_000_000 -> "%.2fM".format(value / 1_000_000.0)
-            absVal >= 1_000 -> "%.2fK".format(value / 1_000.0)
-            else -> "%.0f".format(value)
+            absVal >= 1_000_000_000 -> "%.2fB".format(java.util.Locale.ROOT, value / 1_000_000_000.0)
+            absVal >= 1_000_000 -> "%.2fM".format(java.util.Locale.ROOT, value / 1_000_000.0)
+            absVal >= 1_000 -> "%.2fK".format(java.util.Locale.ROOT, value / 1_000.0)
+            else -> "%.0f".format(java.util.Locale.ROOT, value)
         }
     }
 
@@ -256,7 +261,7 @@ object StatsRenderer {
         val fallback = StatField.MONEY
 
         val fixed = cfg.stat.takeIf { it in allowedStats } ?: fallback
-        if (cfg.displayMode != de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig.DisplayMode.CYCLE) {
+        if (cfg.displayMode != DisplayMode.CYCLE) {
             return fixed
         }
 

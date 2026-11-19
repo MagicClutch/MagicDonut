@@ -37,7 +37,7 @@ class MagicDonutConfig {
             HANDLER.load()
         }
 
-        fun createGUI(parent: Screen): Screen {
+        fun createGUI(parent: Screen?): Screen {
             return YetAnotherConfigLib.create<MagicDonutConfig>(
                 HANDLER
             ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->

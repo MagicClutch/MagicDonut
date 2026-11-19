@@ -5,57 +5,62 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import de.magicclutch.magicdonut.client.MagicDonutClient
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
-import net.minecraft.client.Minecraft
+import net.minecraft.ChatFormatting
 import net.minecraft.client.gui.screens.ChatScreen
 import net.minecraft.network.chat.ClickEvent
-import net.minecraft.network.chat.ClickEvent.RunCommand
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
-import net.minecraft.network.chat.HoverEvent.ShowText
-import net.minecraft.network.chat.TextColor
-import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
+import net.minecraft.network.chat.MutableComponent
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
-import java.util.*
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.util.Locale
 
 object PayConfirmClient {
+    private val amountPattern = Regex("""(\d+(?:\.\d+)?)([kmb])?""", RegexOption.IGNORE_CASE)
+
     private var pendingCommand: String? = null
-    private var timeoutTimer: Timer? = null
+    private var pendingDeadlineMs: Long = 0L
 
     fun init() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
-
             dispatcher.register(
                 ClientCommands.literal("pay")
                     .executes { context ->
-
-                        val msg = "§cSyntax: /pay <player> <amount>"
-                        context.source.sendFeedback(Component.literal(msg))
+                        context.source.sendFeedback(
+                            Component.literal("Syntax: /pay <player> <amount>").withStyle(ChatFormatting.RED)
+                        )
                         Command.SINGLE_SUCCESS
                     }
-                    .then(ClientCommands.argument("target", StringArgumentType.word())
-                        .then(ClientCommands.argument("amount", StringArgumentType.string())
-                            .executes { context ->
-                                val target = StringArgumentType.getString(context, "target")
-                                val amountStr = StringArgumentType.getString(context, "amount")
-                                handlePay(context.source, target, amountStr)
-                            }
-                        )
+                    .then(
+                        ClientCommands.argument("target", StringArgumentType.word())
+                            .then(
+                                ClientCommands.argument("amount", StringArgumentType.string())
+                                    .executes { context ->
+                                        handlePay(
+                                            context.source,
+                                            StringArgumentType.getString(context, "target"),
+                                            StringArgumentType.getString(context, "amount")
+                                        )
+                                    }
+                            )
                     )
             )
 
             dispatcher.register(
                 ClientCommands.literal("payconfirm").executes { context ->
-                    val cmd = pendingCommand
-                    if (cmd != null) {
-                        Minecraft.getInstance().player?.connection?.send(ServerboundChatCommandPacket(cmd))
+                    val command = pendingCommand
+                    if (command != null) {
                         cancelPending()
+                        sendCommand(command)
                     } else {
-                        context.source.sendError(Component.literal("§cNo payment pending."))
+                        context.source.sendError(Component.literal("No payment pending.").withStyle(ChatFormatting.RED))
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -65,112 +70,129 @@ object PayConfirmClient {
                 ClientCommands.literal("paycancel").executes { context ->
                     if (pendingCommand != null) {
                         cancelPending()
-                        context.source.sendFeedback(Component.literal("§l§4Payment cancelled."))
+                        context.source.sendFeedback(
+                            Component.literal("Payment cancelled.").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD)
+                        )
                     } else {
-                        context.source.sendError(Component.literal("§cThere are no payments in process."))
+                        context.source.sendError(Component.literal("There are no payments in process.").withStyle(ChatFormatting.RED))
                     }
                     Command.SINGLE_SUCCESS
                 }
             )
         }
 
+        // Expire pending payments on the client thread (no background timers needed).
+        ClientTickEvents.END_CLIENT_TICK.register { client ->
+            if (pendingCommand == null) return@register
+            if (client.level == null) {
+                // Never let a pending payment survive a disconnect / server switch.
+                cancelPending()
+            } else if (System.currentTimeMillis() >= pendingDeadlineMs) {
+                cancelPending()
+                MinecraftClientService.sendChatMessage(
+                    Component.literal("⌛ Payment expired.").withStyle(ChatFormatting.RED)
+                )
+            }
+        }
+
         UseEntityCallback.EVENT.register { _, _, _, entity, _ ->
-            if(!MagicDonutClient.payButtonBinding.isDown) return@register InteractionResult.PASS
+            if (!MagicDonutClient.payButtonBinding.isDown) return@register InteractionResult.PASS
 
             val target = entity as? Player ?: return@register InteractionResult.PASS
 
-            MinecraftClientService.client.gui.setScreen(
-                ChatScreen("/pay ${target.name.string} ", false)
-            )
+            MinecraftClientService.client.gui.setScreen(ChatScreen("/pay ${target.name.string} ", false))
 
-            return@register InteractionResult.SUCCESS
+            InteractionResult.SUCCESS
         }
     }
 
     private fun handlePay(source: FabricClientCommandSource, target: String, amountStr: String): Int {
+        // This client command shadows /pay everywhere; on other servers just pass it through untouched.
+        if (!MinecraftClientService.isOnDonut) {
+            sendCommand("pay $target $amountStr")
+            return Command.SINGLE_SUCCESS
+        }
+
         val amount = parseAmount(amountStr)
         if (amount == null) {
-            source.sendError(Component.literal("§cUnknown amount: $amountStr"))
+            source.sendError(Component.literal("Unknown amount: $amountStr").withStyle(ChatFormatting.RED))
             return Command.SINGLE_SUCCESS
         }
 
         val config = MagicDonutConfig.instance.payConfirmConfig
         val fullCommand = "pay $target $amount"
-        fun formatToShort(amount: Long): String {
-            val b = amount / 1_000_000_000.0
-            val m = amount / 1_000_000.0
-            val k = amount / 1_000.0
 
-            return when {
-                amount >= 1_000_000_000L -> "%.2f".format(Locale.ENGLISH, b).trimEnd('0').trimEnd('.') + "b"
-                amount >= 1_000_000L -> "%.2f".format(Locale.ENGLISH, m).trimEnd('0').trimEnd('.') + "m"
-                amount >= 1_000L -> "%.2f".format(Locale.ENGLISH, k).trimEnd('0').trimEnd('.') + "k"
-                else -> amount.toString()
-            }
+        if (!config.enabled || amount < config.confirmThreshold) {
+            sendCommand(fullCommand)
+            return Command.SINGLE_SUCCESS
         }
-        if (config.enabled && amount >= config.confirmThreshold) {
-            startTimeout(source, config.timeoutSeconds)
-            pendingCommand = fullCommand
 
-            val display = formatToShort(amount)
-            source.sendFeedback(Component.literal("Payment for §a$display §rto §a$target?"))
+        pendingCommand = fullCommand
+        pendingDeadlineMs = System.currentTimeMillis() + config.timeoutSeconds.coerceAtLeast(1) * 1000L
 
-            val confirmBtn = Component.literal("[✔ Confirm]").withStyle { style ->
-                style.withColor(TextColor.fromRgb(0x55FF55))
-                    .withBold(true)
-                    .withClickEvent(RunCommand("/payconfirm") as ClickEvent)
-                    .withHoverEvent(ShowText(Component.literal("§a/payconfirm")) as HoverEvent)
-            }
+        source.sendFeedback(
+            Component.literal("Payment for ")
+                .append(Component.literal(formatToShort(amount)).withStyle(ChatFormatting.GREEN))
+                .append(" to ")
+                .append(Component.literal(target).withStyle(ChatFormatting.GREEN))
+                .append("?")
+        )
 
-            val cancelBtn = Component.literal("[❌ Cancel]").withStyle { style ->
-                style.withColor(TextColor.fromRgb(0xFF5555))
-                    .withBold(true)
-                    .withClickEvent(RunCommand("/paycancel") as ClickEvent)
-                    .withHoverEvent(ShowText(Component.literal("§c/paycancel")) as HoverEvent)
-            }
-
-            source.sendFeedback(
-                Component.literal("Click to ").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) }
-                    .append(confirmBtn)
-                    .append(Component.literal(" or ").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) })
-                    .append(cancelBtn)
-                    .append(Component.literal(".").withStyle { it.withColor(TextColor.fromRgb(0xAAAAAA)) })
-            )
-        } else {
-            Minecraft.getInstance().player?.connection?.send(ServerboundChatCommandPacket(fullCommand))
-        }
+        source.sendFeedback(
+            Component.literal("Click to ").withStyle(ChatFormatting.GRAY)
+                .append(button("[✔ Confirm]", ChatFormatting.GREEN, "/payconfirm"))
+                .append(Component.literal(" or ").withStyle(ChatFormatting.GRAY))
+                .append(button("[❌ Cancel]", ChatFormatting.RED, "/paycancel"))
+                .append(Component.literal(".").withStyle(ChatFormatting.GRAY))
+        )
         return Command.SINGLE_SUCCESS
     }
 
-    private fun parseAmount(input: String): Long? {
-        val clean = input.trim().uppercase()
-        val multiplier = when {
-            clean.endsWith("K") -> 1_000L
-            clean.endsWith("M") -> 1_000_000L
-            clean.endsWith("B") -> 1_000_000_000L
-            else -> 1L
+    private fun button(label: String, color: ChatFormatting, command: String): MutableComponent =
+        Component.literal(label).withStyle { style ->
+            style.withColor(color)
+                .withBold(true)
+                .withClickEvent(ClickEvent.RunCommand(command))
+                .withHoverEvent(HoverEvent.ShowText(Component.literal(command).withStyle(color)))
         }
-        val numericPart = clean.replace("[KMB]".toRegex(), "")
-        return numericPart.toDoubleOrNull()?.let { (it * multiplier).toLong() }
+
+    private fun sendCommand(command: String) {
+        MinecraftClientService.client.player?.connection?.sendCommand(command)
     }
 
-    private fun startTimeout(source: FabricClientCommandSource, seconds: Int) {
-        cancelPending()
-        timeoutTimer = Timer().apply {
-            schedule(object : TimerTask() {
-                override fun run() {
-                    if (pendingCommand != null) {
-                        pendingCommand = null
-                        source.sendFeedback(Component.literal("§c⌛ Payment expired."))
-                    }
-                }
-            }, seconds * 1000L)
+    private fun formatToShort(amount: Long): String {
+        fun scaled(divisor: Double, suffix: String) =
+            "%.2f".format(Locale.ROOT, amount / divisor).trimEnd('0').trimEnd('.') + suffix
+
+        return when {
+            amount >= 1_000_000_000L -> scaled(1_000_000_000.0, "b")
+            amount >= 1_000_000L -> scaled(1_000_000.0, "m")
+            amount >= 1_000L -> scaled(1_000.0, "k")
+            else -> amount.toString()
+        }
+    }
+
+    /** Parses `1500`, `2.5k`, `3m`, `1.2B`. Anything else (negative, NaN, junk, overflow, zero) is rejected. */
+    private fun parseAmount(input: String): Long? {
+        val match = amountPattern.matchEntire(input.trim()) ?: return null
+        val number = BigDecimal(match.groupValues[1])
+        val multiplier = when (match.groupValues[2].lowercase()) {
+            "k" -> 1_000L
+            "m" -> 1_000_000L
+            "b" -> 1_000_000_000L
+            else -> 1L
+        }
+        return try {
+            number.multiply(BigDecimal.valueOf(multiplier))
+                .setScale(0, RoundingMode.DOWN)
+                .longValueExact()
+                .takeIf { it > 0 }
+        } catch (_: ArithmeticException) {
+            null
         }
     }
 
     private fun cancelPending() {
         pendingCommand = null
-        timeoutTimer?.cancel()
-        timeoutTimer = null
     }
 }

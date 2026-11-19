@@ -14,14 +14,10 @@ class ConfigCommand {
                 ClientCommands.literal("magicdonututils")
                     .executes { _ ->
                         val client = MinecraftClientService.client
-                        val currentScreen = client.gui.screen()
-
-                        if (currentScreen != null) {
-                            client.schedule {
-                                client.gui.setScreen(
-                                    MagicDonutConfig.createGUI(currentScreen)
-                                )
-                            }
+                        // The chat screen is usually already closed when a command runs, so the parent may be null.
+                        val parent = client.gui.screen()
+                        client.schedule {
+                            client.gui.setScreen(MagicDonutConfig.createGUI(parent))
                         }
                         1
                     }

@@ -44,7 +44,7 @@ object DonationRenderer {
         if (screenWidthInt <= 0 || screenHeightInt <= 0) return
 
         val contentText = if (donation != null) {
-            "${donation.playerName} : ${formatMoney(donation.amount)}"
+            "${donation.playerName} : ${Donation.formatMoney(donation.amount)}"
         } else {
             config.noDonationText
         }
@@ -87,14 +87,6 @@ object DonationRenderer {
         }
     }
 
-    private fun formatMoney(value: Float): String {
-        return when {
-            value >= 1_000_000_000 -> String.format("%.2fB$", value / 1_000_000_000.0)
-            value >= 1_000_000 -> String.format("%.2fM$", value / 1_000_000.0)
-            value >= 1_000 -> String.format("%.2fK$", value / 1_000.0)
-            else -> String.format("%.2f$", value)
-        }
-    }
 
 
     private fun safeFill(context: GuiGraphicsExtractor, x1: Int, y1: Int, x2: Int, y2: Int, color: Int) {

@@ -14,6 +14,7 @@ import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
+import net.minecraft.ChatFormatting
 import net.minecraft.client.KeyMapping
 import net.minecraft.network.chat.Component
 
@@ -33,10 +34,8 @@ class MagicDonutClient : ClientModInitializer {
                 val apiKey = matcher.group(2)
                 MagicDonutConfig.instance.developmentConfig.apiKey = apiKey
                 MagicDonutConfig.HANDLER.save()
-                println("API Key $apiKey saved.")
-                MinecraftClientService.client.player
                 MinecraftClientService.sendChatMessage(
-                    Component.literal("§a[MagicDonutUtils] API-Key saved ✓")
+                    Component.literal("[MagicDonutUtils] API-Key saved ✓").withStyle(ChatFormatting.GREEN)
                 )
             }
         }
