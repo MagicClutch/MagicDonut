@@ -2,6 +2,7 @@ package de.magicclutch.magicdonut.client
 
 import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.auction.AuctionCommand
+import de.magicclutch.magicdonut.client.auction.AuctionHologram
 import de.magicclutch.magicdonut.client.auction.AuctionManager
 import de.magicclutch.magicdonut.client.auction.AuctionRenderer
 import de.magicclutch.magicdonut.client.config.ConfigCommand
@@ -57,6 +58,7 @@ class MagicDonutClient : ClientModInitializer {
         DonationRenderer.register()
         AuctionManager.init()
         AuctionRenderer.register()
+        AuctionHologram.register()
         AuctionCommand.register()
         GambleCommand.register()
         ProfitTracker.init()

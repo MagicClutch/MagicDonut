@@ -18,4 +18,7 @@ class AuctionConfig {
     var bobbingItem: Boolean = true
 
     var playBidSound: Boolean = true
+
+    // The flat panel on the HUD, in addition to the hologram in the world.
+    var showHudPanel: Boolean = false
 }

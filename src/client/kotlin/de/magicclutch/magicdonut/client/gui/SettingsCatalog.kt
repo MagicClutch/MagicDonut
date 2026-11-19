@@ -140,15 +140,17 @@ object SettingsCatalog {
         val a = c.auctionConfig
         header("How it works")
         info { "Hold an item, run /auction start. The highest payment to you wins." }
+        info { "/auction move puts the hologram back in front of you." }
         header("General")
-        toggle("Show hologram panel", "The floating item panel while an auction runs.", { a.enabled }, { a.enabled = it })
+        toggle("Show hologram", "The item floats in the world in front of you while an auction runs.", { a.enabled }, { a.enabled = it })
+        toggle("Also show HUD panel", "A flat panel on screen in addition to the hologram.", { a.showHudPanel }, { a.showHudPanel = it })
         intSlider("Default duration", "Used when /auction start has no duration.", 10, 900, 10, "s", { a.defaultDurationSeconds }, { a.defaultDurationSeconds = it })
         amount("Default minimum bid", "Payments below this are ignored. Accepts 1000, 1k or 2.5m.", { a.defaultMinimumBid }, { a.defaultMinimumBid = it })
         toggle("Sound on new top bid", "A short sound when someone takes the lead.", { a.playBidSound }, { a.playBidSound = it })
-        header("Hologram")
-        slider("Horizontal position", "0 is the left edge, 1 the right edge.", 0f, 1f, 0.01f, "", { a.x }, { a.x = it })
-        slider("Vertical position", "0 is the top edge, 1 the bottom edge.", 0f, 1f, 0.01f, "", { a.y }, { a.y = it })
-        slider("Scale", "Size of the panel.", 0.5f, 3f, 0.1f, "x", { a.scale }, { a.scale = it })
+        header("Hologram and panel")
+        slider("HUD panel: horizontal", "Position of the HUD panel. 0 is the left edge.", 0f, 1f, 0.01f, "", { a.x }, { a.x = it })
+        slider("HUD panel: vertical", "Position of the HUD panel. 0 is the top edge.", 0f, 1f, 0.01f, "", { a.y }, { a.y = it })
+        slider("Scale", "Size of the hologram and the panel.", 0.5f, 3f, 0.1f, "x", { a.scale }, { a.scale = it })
         toggle("Floating animation", "The item gently bobs up and down.", { a.bobbingItem }, { a.bobbingItem = it })
         header("Control")
         button("Cancel running auction", "Stops the current auction without a winner.", "Cancel", danger = true) { AuctionManager.cancel() }

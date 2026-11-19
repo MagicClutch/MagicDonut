@@ -9,6 +9,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.phys.Vec3
 
 /**
  * A player-run auction: the seller holds an item, other players bid by paying the seller
@@ -26,6 +27,10 @@ object AuctionManager {
         val endsAtMs: Long,
     ) {
         val bids: MutableList<Bid> = mutableListOf()
+
+        /** Where the hologram floats in the world. */
+        @Volatile
+        var anchor: Vec3? = null
 
         val highest: Bid?
             get() = bids.maxByOrNull { it.amount }
@@ -64,9 +69,9 @@ object AuctionManager {
         }
     }
 
-    fun start(item: ItemStack, seconds: Int, minimumBid: Long): Boolean {
+    fun start(item: ItemStack, seconds: Int, minimumBid: Long, anchor: Vec3?): Boolean {
         if (item.isEmpty || current != null) return false
-        current = Auction(item.copy(), minimumBid, System.currentTimeMillis() + seconds * 1000L)
+        current = Auction(item.copy(), minimumBid, System.currentTimeMillis() + seconds * 1000L).also { it.anchor = anchor }
         finished = null
         return true
     }
@@ -135,4 +140,13 @@ object AuctionManager {
         val how = sellerName?.let { " | /pay $it <amount> to bid" } ?: ""
         return "AUCTION: $name | $bid | ${auction.secondsLeft()}s left$how"
     }
+}
+
+/** A point in front of the player (horizontally), slightly below eye height: where a new hologram floats. */
+fun anchorInFront(player: net.minecraft.world.entity.player.Player, distance: Double = 2.4): Vec3 {
+    val look = player.lookAngle
+    var horizontal = Vec3(look.x, 0.0, look.z)
+    horizontal = if (horizontal.lengthSqr() < 1.0E-4) Vec3(0.0, 0.0, 1.0) else horizontal.normalize()
+    val eye = player.getEyePosition()
+    return Vec3(eye.x + horizontal.x * distance, eye.y - 0.35, eye.z + horizontal.z * distance)
 }

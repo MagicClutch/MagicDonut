@@ -26,6 +26,14 @@ java {
 loom {
     splitEnvironmentSourceSets()
 
+    runs {
+        named("client") {
+            // Log into the dev client with your own Microsoft account (DevAuth Neo) so you can join real servers.
+            property("devauth.enabled", "1")
+            property("devauth.account", "main")
+        }
+    }
+
     mods {
         register("magicdonututils") {
             sourceSet("main")
@@ -60,6 +68,9 @@ dependencies {
 
     // Mod Menu entry (optional at runtime)
     compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+
+    // Dev only: not part of the mod, never shipped to players.
+    localRuntime("net.litetex.mcm:dev-auth-neo:${project.property("devauth_neo_version")}")
 
 }
 

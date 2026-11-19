@@ -31,7 +31,7 @@ object AuctionRenderer {
 
     fun render(context: GuiGraphicsExtractor) {
         val config = MagicDonutConfig.instance.auctionConfig
-        if (!config.enabled) return
+        if (!config.enabled || !config.showHudPanel) return
 
         val mc = Minecraft.getInstance()
         if (mc.level == null) return

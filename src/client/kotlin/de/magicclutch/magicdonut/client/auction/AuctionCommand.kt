@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component
 
 /**
  * /auction start [seconds] [minimumBid]  - auction the item in your main hand
- * /auction status | end | cancel | announce
+ * /auction status | end | cancel | announce | move
  */
 object AuctionCommand {
     fun register() {
@@ -44,6 +44,7 @@ object AuctionCommand {
                     .then(ClientCommands.literal("end").executes { end(it.source) })
                     .then(ClientCommands.literal("cancel").executes { cancel(it.source) })
                     .then(ClientCommands.literal("announce").executes { announce(it.source) })
+                    .then(ClientCommands.literal("move").executes { move(it.source) })
             )
         }
     }
@@ -71,7 +72,8 @@ object AuctionCommand {
             return Command.SINGLE_SUCCESS
         }
 
-        AuctionManager.start(held, seconds ?: config.defaultDurationSeconds, minBid)
+        val player = MinecraftClientService.client.player!!
+        AuctionManager.start(held, seconds ?: config.defaultDurationSeconds, minBid, anchorInFront(player))
         info(source, "Auction started. Bids are payments to you; the highest payment wins.")
         info(source, "Use /auction announce to post it in chat. Remember to refund the losing bidders.")
         return Command.SINGLE_SUCCESS
@@ -99,6 +101,18 @@ object AuctionCommand {
 
     private fun cancel(source: FabricClientCommandSource): Int {
         if (AuctionManager.cancel()) info(source, "Auction cancelled.") else error(source, "No auction is running.")
+        return Command.SINGLE_SUCCESS
+    }
+
+    private fun move(source: FabricClientCommandSource): Int {
+        val auction = AuctionManager.current
+        val player = MinecraftClientService.client.player
+        if (auction == null || player == null) {
+            error(source, "No auction is running.")
+        } else {
+            auction.anchor = anchorInFront(player)
+            info(source, "Hologram moved in front of you.")
+        }
         return Command.SINGLE_SUCCESS
     }
 
