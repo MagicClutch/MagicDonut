@@ -1,0 +1,21 @@
+name = "magicdonut-proxy"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Secrets are NOT stored here. Set them with:
+#   npx wrangler secret put DONUT_API_KEY
+#   npx wrangler secret put SESSION_SECRET     (any long random string)
+# Optional ban list (comma separated uuids without dashes):
+#   npx wrangler secret put BANNED_UUIDS
+
+# Per-account limit: 60 stats lookups per minute that miss the cache.
+[[ratelimits]]
+name = "USER_LIMITER"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }
+
+# Everyone together: keep this below the rate limit of your Donut API key.
+[[ratelimits]]
+name = "GLOBAL_LIMITER"
+namespace_id = "1002"
+simple = { limit = 200, period = 60 }

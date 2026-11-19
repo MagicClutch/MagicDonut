@@ -18,7 +18,6 @@ import java.util.regex.Pattern
 object APIService {
     private val logger = LoggerFactory.getLogger("MagicDonutUtils/API")
 
-
     val apiTokenPattern: Pattern = Pattern.compile("API (Key|Token is): ([a-z0-9]{32})")
 
     // One shared client: HttpClient owns a selector thread and connection pool, so creating one per request leaks resources.
@@ -26,11 +25,25 @@ object APIService {
         .connectTimeout(Duration.ofSeconds(5))
         .build()
 
-    private fun statsEndpoint(): String =
-        MagicDonutConfig.instance.developmentConfig.apiBaseUrl.trim().trimEnd('/').ifBlank { DevelopmentConfig.DEFAULT_API_BASE_URL } + "/stats/"
+    private val proxyAuth = ProxyAuth(httpClient)
+
+    private fun baseUrl(): String =
+        MagicDonutConfig.instance.developmentConfig.apiBaseUrl.trim().trimEnd('/')
+            .ifBlank { DevelopmentConfig.DEFAULT_API_BASE_URL }
+
+    /**
+     * True when `apiBaseUrl` points at a custom proxy. The proxy holds the real API key; we only prove
+     * who we are with our own Minecraft account (see [ProxyAuth]).
+     */
+    fun isProxyMode(): Boolean =
+        baseUrl() != DevelopmentConfig.DEFAULT_API_BASE_URL
 
     fun hasApiKey(): Boolean =
         getApiKey().isNotBlank()
+
+    /** Whether stats can be requested at all: through a proxy, or directly with a personal key. */
+    fun isAvailable(): Boolean =
+        isProxyMode() || hasApiKey()
 
     fun getConfigPath(): Path =
         FabricLoader.getInstance().configDir.resolve("magicdonut.json5")
@@ -43,22 +56,27 @@ object APIService {
      * Returns `null` on any failure; the cause is logged.
      */
     fun getStats(username: String): JsonObject? {
-        val apiKey = getApiKey()
-        if (apiKey.isBlank()) {
-            logger.debug("Stats request skipped: no API key configured (config={})", getConfigPath())
-            return null
-        }
-
         val normalizedUsername = PlayerIdentityUtil.normalizeUsernameForApi(username)
         if (normalizedUsername.isNullOrBlank()) {
             logger.debug("Stats request skipped: invalid username '{}'", username)
             return null
         }
 
+        val proxy = isProxyMode()
+        val credential = if (proxy) {
+            proxyAuth.getToken(baseUrl(), MinecraftClientService.client)
+        } else {
+            getApiKey().takeIf { it.isNotBlank() }
+        }
+        if (credential == null) {
+            logger.debug("Stats request skipped: no usable credential (proxy={}, config={})", proxy, getConfigPath())
+            return null
+        }
+
         val request = HttpRequest.newBuilder()
-            .uri(URI.create(statsEndpoint() + normalizedUsername))
+            .uri(URI.create("${baseUrl()}/stats/$normalizedUsername"))
             .timeout(Duration.ofSeconds(10))
-            .header("Authorization", "Bearer $apiKey")
+            .header("Authorization", "Bearer $credential")
             .header("Accept", "application/json")
             .GET()
             .build()
@@ -68,7 +86,13 @@ object APIService {
             when (val status = response.statusCode()) {
                 200 -> parseResult(response.body())
                 401 -> {
-                    logger.warn("Stats request rejected with 401 Unauthorized; check the API key {} (config={})", maskApiKey(apiKey), getConfigPath())
+                    if (proxy) {
+                        // Token expired or was revoked: log in again on the next request.
+                        proxyAuth.invalidate()
+                        logger.debug("Proxy rejected our token; will log in again")
+                    } else {
+                        logger.warn("Stats request rejected with 401 Unauthorized; check the API key {} (config={})", maskApiKey(credential), getConfigPath())
+                    }
                     null
                 }
                 else -> {

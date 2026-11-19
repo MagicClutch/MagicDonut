@@ -16,7 +16,9 @@ object DevelopmentCategory {
         val d = defaults.developmentConfig
         val c = config.developmentConfig
 
-        val status = if (APIService.hasApiKey()) {
+        val status = if (APIService.isProxyMode()) {
+            Component.translatable("magicdonut.config.dev.status.proxy").withStyle(ChatFormatting.GREEN)
+        } else if (APIService.hasApiKey()) {
             Component.translatable("magicdonut.config.dev.status.ok").withStyle(ChatFormatting.GREEN)
         } else {
             Component.translatable("magicdonut.config.dev.status.missing").withStyle(ChatFormatting.YELLOW)

@@ -273,7 +273,7 @@ object StatsRenderer {
         }
 
     private fun isApiAvailable(): Boolean =
-        APIService.hasApiKey()
+        APIService.isAvailable()
 
     private fun currentStat(): StatField {
         val cfg = MagicDonutConfig.instance.overheadStatsConfig

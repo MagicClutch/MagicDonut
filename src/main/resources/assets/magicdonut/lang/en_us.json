@@ -49,6 +49,7 @@
 
   "magicdonut.config.dev": "Dev",
   "magicdonut.config.dev.tooltip": "API settings. Only needed for overhead stats.",
+  "magicdonut.config.dev.status.proxy": "Using a stats proxy: you are verified with your Minecraft account, no API key needed.",
   "magicdonut.config.dev.status.ok": "API key set: overhead stats are available.",
   "magicdonut.config.dev.status.missing": "No API key: overhead stats are off. Everything else works without one.",
   "magicdonut.config.dev.help": "DonutSMP API keys are limited to ranked players or approved projects.",
