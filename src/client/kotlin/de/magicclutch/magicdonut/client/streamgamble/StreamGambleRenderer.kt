@@ -32,8 +32,9 @@ object StreamGambleRenderer {
     private const val STRIP_W = 312
     private const val STRIP_H = 44
 
-    private val hostItem = ItemStack(Items.NETHER_STAR)
-    private val playerItem = ItemStack(Items.DIAMOND)
+    // Created on first use: item components are not bound yet while the mod initializes.
+    private val hostItem by lazy { ItemStack(Items.NETHER_STAR) }
+    private val playerItem by lazy { ItemStack(Items.DIAMOND) }
 
     private var lastCell = -1
 
