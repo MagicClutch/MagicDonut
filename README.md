@@ -24,6 +24,19 @@ Adds a keybinding (default **Left Control**) used as a modifier:
 
 - Hold the keybind and **right-click a player** to open chat with `/pay <player> ` prefilled.
 
+### Auction (hologram panel, highest payment wins)
+Hold an item and run `/auction start [seconds] [minBid]`. A floating item panel shows the item, the current top bid and the time left. Other players bid by paying you (`/pay <you> <amount>`); the highest single payment wins.
+
+- `/auction status`, `/auction end`, `/auction cancel`
+- `/auction announce` posts the auction in public chat
+- Display only: nothing is paid or refunded automatically, refunding losing bidders is up to you.
+
+### Gamble simulator (offline)
+`/gamble` opens a casino with a **virtual balance**: coinflip, dice and slots, plus win statistics. It never touches the server or real money.
+
+### API key
+Only overhead stats need a DonutSMP API key (limited to ranked players and approved projects). All other features work without one.
+
 ### Donation HUD (highest donation tracker)
 Tracks donations by parsing incoming chat messages matching:
 

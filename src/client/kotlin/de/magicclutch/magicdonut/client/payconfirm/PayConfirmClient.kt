@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType
 import de.magicclutch.magicdonut.client.MagicDonutClient
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
+import de.magicclutch.magicdonut.client.util.AmountParser
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
@@ -18,13 +19,8 @@ import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.util.Locale
 
 object PayConfirmClient {
-    private val amountPattern = Regex("""(\d+(?:\.\d+)?)([kmb])?""", RegexOption.IGNORE_CASE)
-
     private var pendingCommand: String? = null
     private var pendingDeadlineMs: Long = 0L
 
@@ -113,7 +109,7 @@ object PayConfirmClient {
             return Command.SINGLE_SUCCESS
         }
 
-        val amount = parseAmount(amountStr)
+        val amount = AmountParser.parse(amountStr)
         if (amount == null) {
             source.sendError(Component.literal("Unknown amount: $amountStr").withStyle(ChatFormatting.RED))
             return Command.SINGLE_SUCCESS
@@ -132,7 +128,7 @@ object PayConfirmClient {
 
         source.sendFeedback(
             Component.literal("Payment for ")
-                .append(Component.literal(formatToShort(amount)).withStyle(ChatFormatting.GREEN))
+                .append(Component.literal(AmountParser.formatShort(amount)).withStyle(ChatFormatting.GREEN))
                 .append(" to ")
                 .append(Component.literal(target).withStyle(ChatFormatting.GREEN))
                 .append("?")
@@ -158,38 +154,6 @@ object PayConfirmClient {
 
     private fun sendCommand(command: String) {
         MinecraftClientService.client.player?.connection?.sendCommand(command)
-    }
-
-    private fun formatToShort(amount: Long): String {
-        fun scaled(divisor: Double, suffix: String) =
-            "%.2f".format(Locale.ROOT, amount / divisor).trimEnd('0').trimEnd('.') + suffix
-
-        return when {
-            amount >= 1_000_000_000L -> scaled(1_000_000_000.0, "b")
-            amount >= 1_000_000L -> scaled(1_000_000.0, "m")
-            amount >= 1_000L -> scaled(1_000.0, "k")
-            else -> amount.toString()
-        }
-    }
-
-    /** Parses `1500`, `2.5k`, `3m`, `1.2B`. Anything else (negative, NaN, junk, overflow, zero) is rejected. */
-    private fun parseAmount(input: String): Long? {
-        val match = amountPattern.matchEntire(input.trim()) ?: return null
-        val number = BigDecimal(match.groupValues[1])
-        val multiplier = when (match.groupValues[2].lowercase()) {
-            "k" -> 1_000L
-            "m" -> 1_000_000L
-            "b" -> 1_000_000_000L
-            else -> 1L
-        }
-        return try {
-            number.multiply(BigDecimal.valueOf(multiplier))
-                .setScale(0, RoundingMode.DOWN)
-                .longValueExact()
-                .takeIf { it > 0 }
-        } catch (_: ArithmeticException) {
-            null
-        }
     }
 
     private fun cancelPending() {

@@ -3,6 +3,7 @@ package de.magicclutch.magicdonut.client.service
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.util.PlayerIdentityUtil
 import net.fabricmc.loader.api.FabricLoader
 import org.slf4j.LoggerFactory
@@ -17,7 +18,6 @@ import java.util.regex.Pattern
 object APIService {
     private val logger = LoggerFactory.getLogger("MagicDonutUtils/API")
 
-    private const val STATS_ENDPOINT = "https://api.donutsmp.net/v1/stats/"
 
     val apiTokenPattern: Pattern = Pattern.compile("API (Key|Token is): ([a-z0-9]{32})")
 
@@ -25,6 +25,9 @@ object APIService {
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(5))
         .build()
+
+    private fun statsEndpoint(): String =
+        MagicDonutConfig.instance.developmentConfig.apiBaseUrl.trim().trimEnd('/').ifBlank { DevelopmentConfig.DEFAULT_API_BASE_URL } + "/stats/"
 
     fun hasApiKey(): Boolean =
         getApiKey().isNotBlank()
@@ -53,7 +56,7 @@ object APIService {
         }
 
         val request = HttpRequest.newBuilder()
-            .uri(URI.create(STATS_ENDPOINT + normalizedUsername))
+            .uri(URI.create(statsEndpoint() + normalizedUsername))
             .timeout(Duration.ofSeconds(10))
             .header("Authorization", "Bearer $apiKey")
             .header("Accept", "application/json")

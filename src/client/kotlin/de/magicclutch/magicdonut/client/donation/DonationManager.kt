@@ -1,5 +1,6 @@
 package de.magicclutch.magicdonut.client.donation
 
+import de.magicclutch.magicdonut.client.auction.AuctionManager
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.minecraft.network.chat.Component
@@ -24,6 +25,8 @@ object DonationManager {
             "b" -> 1_000_000_000.0
             else -> 1.0
         }
+
+        AuctionManager.onPayment(playerName, base * multiplier)
 
         val newDonation = Donation(playerName, base * multiplier)
         val currentHighest = config.getHighestDonation()

@@ -1,12 +1,16 @@
 package de.magicclutch.magicdonut.client.config
 
 import com.google.gson.GsonBuilder
+import de.magicclutch.magicdonut.client.config.category.AuctionCategory
 import de.magicclutch.magicdonut.client.config.category.DevelopmentCategory
 import de.magicclutch.magicdonut.client.config.category.DonationCategory
+import de.magicclutch.magicdonut.client.config.category.GambleCategory
 import de.magicclutch.magicdonut.client.config.category.OverheadStatsCategory
 import de.magicclutch.magicdonut.client.config.category.PayConfirmCategory
+import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
+import de.magicclutch.magicdonut.client.config.configuration.GambleConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
 import dev.isxander.yacl3.api.YetAnotherConfigLib
@@ -41,10 +45,12 @@ class MagicDonutConfig {
             return YetAnotherConfigLib.create<MagicDonutConfig>(
                 HANDLER
             ) { defaults: MagicDonutConfig, config: MagicDonutConfig, builder: YetAnotherConfigLib.Builder ->
-                builder.title(Component.literal("MagicDonutUtils Config"))
+                builder.title(Component.translatable("magicdonut.config.title"))
                     .category(PayConfirmCategory.create(defaults, config))
                     .category(DonationCategory.create(defaults, config))
                     .category(OverheadStatsCategory.create(defaults, config))
+                    .category(AuctionCategory.create(defaults, config))
+                    .category(GambleCategory.create(defaults, config))
                     .category(DevelopmentCategory.create(defaults, config))
 
 
@@ -63,4 +69,10 @@ class MagicDonutConfig {
 
     @SerialEntry
     var overheadStatsConfig: OverheadStatsConfig = OverheadStatsConfig()
+
+    @SerialEntry
+    var auctionConfig: AuctionConfig = AuctionConfig()
+
+    @SerialEntry
+    var gambleConfig: GambleConfig = GambleConfig()
 }

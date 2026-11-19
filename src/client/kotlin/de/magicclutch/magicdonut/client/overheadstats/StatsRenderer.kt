@@ -8,7 +8,9 @@ import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import de.magicclutch.magicdonut.client.util.PlayerIdentityUtil
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
+import net.minecraft.network.chat.Component
 import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.player.Player
 import java.util.concurrent.ConcurrentHashMap
@@ -53,6 +55,17 @@ object StatsRenderer {
     private const val MAX_REQUESTS_PER_MINUTE_MIN = 1
     private const val MAX_REQUESTS_PER_MINUTE_MAX = 250
 
+    private var missingKeyHintShown = false
+
+    private fun showMissingKeyHintOnce() {
+        if (missingKeyHintShown) return
+        missingKeyHintShown = true
+        MinecraftClientService.sendChatMessage(
+            Component.literal("[MagicDonutUtils] Overhead stats need a DonutSMP API key (ranked players or approved projects). Everything else works without one.")
+                .withStyle(ChatFormatting.YELLOW)
+        )
+    }
+
     private fun clearTracking() {
         allowedPlayers = emptySet()
         allowedPlayerCount = 0
@@ -64,12 +77,18 @@ object StatsRenderer {
             if (level == null) {
                 // Left the world: drop everything so the caches don't grow across sessions.
                 clearTracking()
+                missingKeyHintShown = false
                 StatsCache.clear()
                 lastUpdateTimes.clear()
                 return@register
             }
             if (!MinecraftClientService.isOnDonut || !MagicDonutConfig.instance.overheadStatsConfig.enabled) {
                 clearTracking()
+                return@register
+            }
+            if (!isApiAvailable()) {
+                clearTracking()
+                showMissingKeyHintOnce()
                 return@register
             }
 
