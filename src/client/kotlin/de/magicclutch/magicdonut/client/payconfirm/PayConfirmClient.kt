@@ -17,6 +17,7 @@ import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.MutableComponent
+import net.minecraft.network.protocol.game.ServerboundChatCommandPacket
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
 
@@ -153,7 +154,9 @@ object PayConfirmClient {
         }
 
     private fun sendCommand(command: String) {
-        MinecraftClientService.client.player?.connection?.sendCommand(command)
+        // Send the packet directly: ClientPacketListener.sendCommand is intercepted by Fabric's client command
+        // handler and would route this straight back into our own /pay command (infinite recursion).
+        MinecraftClientService.client.player?.connection?.send(ServerboundChatCommandPacket(command))
     }
 
     private fun cancelPending() {
