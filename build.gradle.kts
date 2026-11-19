@@ -125,9 +125,3 @@ publishing {
         // retrieving dependencies.
     }
 }
-
-// Minecraft 26.x and Fabric API require Java 25 at runtime. Force every run task (runClient, runDatagen and
-// IDE-generated launch tasks) onto the toolchain JDK, whatever JDK the IDE or Gradle daemon itself uses.
-tasks.withType<JavaExec>().configureEach {
-    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
-}
