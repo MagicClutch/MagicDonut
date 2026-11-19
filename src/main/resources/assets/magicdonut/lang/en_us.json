@@ -38,14 +38,6 @@
   "magicdonut.config.auction.scale": "Scale",
   "magicdonut.config.auction.bobbing": "Floating animation",
 
-  "magicdonut.config.gamble": "Gamble",
-  "magicdonut.config.gamble.tooltip": "Offline casino with virtual money.",
-  "magicdonut.config.gamble.help": "Coinflip, dice and slots with a virtual balance. Nothing here touches the server or your real money. Open it with /gamble.",
-  "magicdonut.config.gamble.open": "Open simulator",
-  "magicdonut.config.gamble.open.desc": "Same as the /gamble command.",
-  "magicdonut.config.gamble.starting": "Starting balance",
-  "magicdonut.config.gamble.starting.desc": "Balance you get after pressing Reset balance.",
-  "magicdonut.config.gamble.sound": "Sounds",
 
   "magicdonut.toggle_profit": "Toggle balance HUD",
   "magicdonut.config.group.layout": "Layout",
@@ -69,9 +61,5 @@
   "magicdonut.config.dev.apikey": "API key",
   "magicdonut.config.dev.apikey.desc": "Your personal DonutSMP API key. Never share it.",
   "magicdonut.config.dev.baseurl": "API base URL",
-  "magicdonut.config.dev.baseurl.desc": "Only change this to point at a proxy you trust.",
-
-  "magicdonut.gamble.title": "Gamble Simulator",
-  "magicdonut.gamble.bet": "Bet",
-  "magicdonut.gamble.bet.hint": "Bet (e.g. 500, 2.5k)"
+  "magicdonut.config.dev.baseurl.desc": "Only change this to point at a proxy you trust."
 }

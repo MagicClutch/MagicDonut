@@ -6,11 +6,9 @@ import com.google.gson.stream.JsonReader
 import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
-import de.magicclutch.magicdonut.client.config.configuration.GambleConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
 import de.magicclutch.magicdonut.client.config.configuration.ProfitConfig
-import de.magicclutch.magicdonut.client.config.configuration.StreamGambleConfig
 import net.fabricmc.loader.api.FabricLoader
 import org.slf4j.LoggerFactory
 import java.nio.file.AtomicMoveNotSupportedException
@@ -28,9 +26,7 @@ class MagicDonutConfig {
     var donationConfig: DonationConfig = DonationConfig()
     var overheadStatsConfig: OverheadStatsConfig = OverheadStatsConfig()
     var auctionConfig: AuctionConfig = AuctionConfig()
-    var gambleConfig: GambleConfig = GambleConfig()
     var profitConfig: ProfitConfig = ProfitConfig()
-    var streamGambleConfig: StreamGambleConfig = StreamGambleConfig()
 
     companion object {
         private val logger = LoggerFactory.getLogger("MagicDonutUtils/Config")

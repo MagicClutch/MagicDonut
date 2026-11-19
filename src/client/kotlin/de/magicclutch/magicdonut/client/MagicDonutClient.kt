@@ -6,7 +6,6 @@ import de.magicclutch.magicdonut.client.auction.AuctionHologram
 import de.magicclutch.magicdonut.client.auction.AuctionManager
 import de.magicclutch.magicdonut.client.auction.AuctionRenderer
 import de.magicclutch.magicdonut.client.config.ConfigCommand
-import de.magicclutch.magicdonut.client.gamble.GambleCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.donation.DonationCommand
 import de.magicclutch.magicdonut.client.donation.DonationManager
@@ -18,9 +17,6 @@ import de.magicclutch.magicdonut.client.profit.ProfitRenderer
 import de.magicclutch.magicdonut.client.profit.ProfitTracker
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import de.magicclutch.magicdonut.client.streamgamble.StreamGambleCommand
-import de.magicclutch.magicdonut.client.streamgamble.StreamGambleManager
-import de.magicclutch.magicdonut.client.streamgamble.StreamGambleRenderer
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
@@ -63,13 +59,9 @@ class MagicDonutClient : ClientModInitializer {
         AuctionRenderer.register()
         AuctionHologram.register()
         AuctionCommand.register()
-        GambleCommand.register()
         ProfitTracker.init()
         ProfitRenderer.register()
         ProfitCommand.register()
-        StreamGambleManager.init()
-        StreamGambleRenderer.register()
-        StreamGambleCommand.register()
     }
 
     companion object {

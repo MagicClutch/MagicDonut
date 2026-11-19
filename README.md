@@ -31,9 +31,6 @@ Hold an item and run `/auction start [seconds] [minBid]`. A floating item panel 
 - `/auction announce` posts the auction in public chat
 - Display only: nothing is paid or refunded automatically, refunding losing bidders is up to you.
 
-### Slot machine (offline)
-`/gamble` opens a slot machine built from Minecraft items (nether star, diamond, emerald, gold, redstone) with spinning reels, a payout table and win statistics, played with a **virtual balance**. It never touches the server or real money.
-
 ### API key
 Only overhead stats need a DonutSMP API key (limited to ranked players and approved projects). All other features work without one.
 
