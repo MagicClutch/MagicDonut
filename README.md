@@ -121,8 +121,6 @@ Build output:
 
 Notes:
 - The project uses Fabric Loom with split `main` and `client` source sets.
-- `DevAuth Neo` is included as a local runtime dependency for development/login convenience; it is not required for normal players.
-- `runClient` starts with DevAuth enabled and account label `main`. On first launch, follow the login prompt; tokens are stored under `%USERPROFILE%\.dev-auth-neo`.
 
 ## Troubleshooting
 

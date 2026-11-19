@@ -26,13 +26,6 @@ java {
 loom {
     splitEnvironmentSourceSets()
 
-    runs {
-        named("client") {
-            property("devauth.enabled", "1")
-            property("devauth.account", "main")
-        }
-    }
-
     mods {
         register("magicdonututils") {
             sourceSet("main")
@@ -74,9 +67,6 @@ dependencies {
     // Config
     implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
     compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
-
-    // Dev authentication for running the dev client with a Microsoft account.
-    localRuntime("net.litetex.mcm:dev-auth-neo:${project.property("devauth_neo_version")}")
 }
 
 tasks.processResources {
@@ -134,4 +124,10 @@ publishing {
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
     }
+}
+
+// Minecraft 26.x and Fabric API require Java 25 at runtime. Force every run task (runClient, runDatagen and
+// IDE-generated launch tasks) onto the toolchain JDK, whatever JDK the IDE or Gradle daemon itself uses.
+tasks.withType<JavaExec>().configureEach {
+    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
 }
