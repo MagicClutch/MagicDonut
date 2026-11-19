@@ -3,6 +3,7 @@ package de.magicclutch.magicdonut.client.gamble
 import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.gamble.GambleGames.Symbol
+import de.magicclutch.magicdonut.client.gui.MouseButton
 import de.magicclutch.magicdonut.client.gui.Theme
 import de.magicclutch.magicdonut.client.gui.frame
 import de.magicclutch.magicdonut.client.gui.inside
@@ -341,7 +342,7 @@ class GambleScreen(private val parent: Screen? = null) : Screen(Component.transl
     override fun mouseClicked(event: MouseButtonEvent, isDoubleClick: Boolean): Boolean {
         val mx = event.x().toInt()
         val my = event.y().toInt()
-        if (event.button() != 0) return super.mouseClicked(event, isDoubleClick)
+        if (event.button() != MouseButton.LEFT) return super.mouseClicked(event, isDoubleClick)
 
         val d = doneRect()
         if (inside(mx, my, d[0], d[1], d[2], d[3])) {

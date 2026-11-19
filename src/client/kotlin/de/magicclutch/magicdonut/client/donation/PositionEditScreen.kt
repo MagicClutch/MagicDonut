@@ -1,6 +1,7 @@
 package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.gui.MouseButton
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
@@ -92,7 +93,7 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
     }
 
     override fun mouseClicked(event: MouseButtonEvent, isDoubleClick: Boolean): Boolean {
-        if (event.button() == 0) {
+        if (event.button() == MouseButton.LEFT) {
             val res = computeDragRect()
             if (res != null) {
                 val (_, rect) = res

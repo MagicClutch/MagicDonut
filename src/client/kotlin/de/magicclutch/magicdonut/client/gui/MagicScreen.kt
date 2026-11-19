@@ -317,7 +317,7 @@ class MagicScreen(private val parent: Screen? = null) : Screen(Component.literal
     }
 
     override fun mouseClicked(event: MouseButtonEvent, isDoubleClick: Boolean): Boolean {
-        if (event.button() > 1) return super.mouseClicked(event, isDoubleClick)
+        if (event.button() != MouseButton.LEFT && event.button() != MouseButton.RIGHT) return super.mouseClicked(event, isDoubleClick)
         val mx = event.x().toInt()
         val my = localMouseY(event)
 
@@ -382,9 +382,9 @@ class MagicScreen(private val parent: Screen? = null) : Screen(Component.literal
 
             val toggle = page.toggle
             val launch = page.launch
-            if (button == 0 && toggle != null && inside(mx, my, x + tw - 38, y + 4, 34, 17)) {
+            if (button == MouseButton.LEFT && toggle != null && inside(mx, my, x + tw - 38, y + 4, 34, 17)) {
                 toggle.second(!toggle.first())
-            } else if (button == 0 && launch != null && inside(mx, my, x + tw - 44, y + 4, 40, 17)) {
+            } else if (button == MouseButton.LEFT && launch != null && inside(mx, my, x + tw - 44, y + 4, 40, 17)) {
                 launch.second()
             } else {
                 select(index)

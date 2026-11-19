@@ -107,3 +107,10 @@ fun inside(mx: Int, my: Int, x: Int, y: Int, w: Int, h: Int): Boolean =
     mx >= x && mx < x + w && my >= y && my < y + h
 
 fun clampInt(value: Int, low: Int, high: Int): Int = max(low, min(high, value))
+
+/** Mouse button numbers as Minecraft 26.x reports them (SDL numbering: left is 1, not 0). */
+object MouseButton {
+    const val LEFT = 1
+    const val MIDDLE = 2
+    const val RIGHT = 3
+}

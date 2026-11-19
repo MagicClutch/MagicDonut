@@ -136,7 +136,7 @@ class ToggleRow(
     }
 
     override fun mouseClicked(event: MouseButtonEvent): Boolean {
-        if (event.button() != 0 || !overRow(event)) return false
+        if (event.button() != MouseButton.LEFT || !overRow(event)) return false
         set(!get())
         commit()
         return true
@@ -184,7 +184,7 @@ class SliderRow(
     }
 
     override fun mouseClicked(event: MouseButtonEvent): Boolean {
-        if (event.button() != 0 || !visible) return false
+        if (event.button() != MouseButton.LEFT || !visible) return false
         if (!inside(event.x().toInt(), event.y().toInt(), trackX - 6, controlCenterY - 9, trackW + 12, 18)) return false
         dragging = true
         applyMouse(event.x())
@@ -244,7 +244,7 @@ open class TextRow(
     }
 
     override fun mouseClicked(event: MouseButtonEvent): Boolean {
-        if (event.button() != 0 || !visible) return false
+        if (event.button() != MouseButton.LEFT || !visible) return false
         val y = controlCenterY - 9
         val onBox = inside(event.x().toInt(), event.y().toInt(), boxX, y, boxW, 18)
         if (!onBox) {
@@ -326,8 +326,8 @@ class CycleRow<T>(
         if (!visible || !inside(event.x().toInt(), event.y().toInt(), controlX, controlCenterY - 9, controlWidth, 18)) return false
         val index = values.indexOf(get()).coerceAtLeast(0)
         val next = when (event.button()) {
-            0 -> index + 1
-            1 -> index - 1
+            MouseButton.LEFT -> index + 1
+            MouseButton.RIGHT -> index - 1
             else -> return false
         }
         set(values[Math.floorMod(next, values.size)])
@@ -364,7 +364,7 @@ class ColorRow(
     }
 
     override fun mouseClicked(event: MouseButtonEvent): Boolean {
-        if (event.button() == 0 && visible && inside(event.x().toInt(), event.y().toInt(), controlX, controlCenterY - 9, 18, 18)) {
+        if (event.button() == MouseButton.LEFT && visible && inside(event.x().toInt(), event.y().toInt(), controlX, controlCenterY - 9, 18, 18)) {
             // Clicking the swatch cycles through the presets.
             val current = get()
             val index = presets.indexOfFirst { (it and 0x00FFFFFF) == (current and 0x00FFFFFF) }
@@ -412,7 +412,7 @@ class ButtonRow(
     }
 
     override fun mouseClicked(event: MouseButtonEvent): Boolean {
-        if (event.button() != 0 || !visible || !inside(event.x().toInt(), event.y().toInt(), controlX, controlCenterY - 9, controlWidth, 18)) return false
+        if (event.button() != MouseButton.LEFT || !visible || !inside(event.x().toInt(), event.y().toInt(), controlX, controlCenterY - 9, controlWidth, 18)) return false
         action()
         return true
     }
