@@ -30,7 +30,7 @@ object ProfitCommand {
     private fun status(source: FabricClientCommandSource): Int {
         val balance = ProfitTracker.currentBalance
         if (balance == null) {
-            error(source, "Balance not loaded yet. It needs an API key or proxy and a DonutSMP connection.")
+            error(source, "Balance not found yet. Join DonutSMP; it is read from the tab list footer.")
             return Command.SINGLE_SUCCESS
         }
         info(source, "Balance: $${AmountParser.formatShort(balance)}")
@@ -47,7 +47,7 @@ object ProfitCommand {
         if (ProfitTracker.startToday()) {
             info(context.source, "Starting point saved. Today's profit is now $0.")
         } else {
-            error(context.source, "Balance not loaded yet, try again in a moment.")
+            error(context.source, "Balance not found yet, try again in a moment.")
         }
         return Command.SINGLE_SUCCESS
     }

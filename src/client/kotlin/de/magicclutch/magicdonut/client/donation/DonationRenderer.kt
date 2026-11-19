@@ -77,10 +77,10 @@ object DonationRenderer {
                 val boxH = ceil(9f + paddingY * 2f).toInt()
 
                 // No rounded-corners option: always render a simple rectangle.
-                safeFill(context, boxX, boxY, boxX + boxW, boxY + boxH, config.boxColor)
+                safeFill(context, boxX, boxY, boxX + boxW, boxY + boxH, config.boxColor.rgb)
             }
 
-            context.text(font, text, -(textWidth / 2f).toInt(), 0, config.color, true)
+            context.text(font, text, -(textWidth / 2f).toInt(), 0, config.color.rgb, true)
         } finally {
             // Ensure we never leave the pose stack unbalanced (can crash later frames).
             pose.popMatrix()

@@ -1,19 +1,17 @@
 package de.magicclutch.magicdonut.client.profit
 
-import com.google.gson.JsonElement
-import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import de.magicclutch.magicdonut.client.service.APIService
-import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import com.mojang.blaze3d.platform.InputConstants
+import de.magicclutch.magicdonut.client.config.MagicDonutConfig
+import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.minecraft.client.KeyMapping
 import java.time.LocalDate
-import java.util.concurrent.Executors
 
 /**
- * Tracks how much money you gained or lost today. Your own balance is read from the stats API at a low
- * rate; the balance at the start of the day is stored in the config.
+ * Tracks how much money you gained or lost today. The balance comes from the tab list footer ([TabListFooter]),
+ * so no API key is needed. The first balance seen on a new day becomes that day's starting point; the starting
+ * point is stored in the config.
  */
 object ProfitTracker {
     // Unbound by default; players pick their own key in the controls screen.
@@ -23,17 +21,9 @@ object ProfitTracker {
 
     private val config get() = MagicDonutConfig.instance.profitConfig
 
-    private val executor = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "MagicDonutUtils-Profit").apply { isDaemon = true }
-    }
-
     @Volatile
     var currentBalance: Double? = null
         private set
-
-    @Volatile
-    private var fetching = false
-    private var lastFetchMs = 0L
 
     /** Gain (positive) or loss (negative) since the start of the tracked day, or `null` if unknown. */
     val profitToday: Double?
@@ -50,26 +40,15 @@ object ProfitTracker {
                 MagicDonutConfig.save()
             }
 
-            if (client.level == null) {
+            if (client.level == null || !MinecraftClientService.isOnDonut) {
                 currentBalance = null
+                if (client.level == null) TabListFooter.clear()
                 return@register
             }
-            if (!config.enabled || !MinecraftClientService.isOnDonut || !APIService.isAvailable()) return@register
 
-            val now = System.currentTimeMillis()
-            if (fetching || now - lastFetchMs < config.refreshSeconds.coerceIn(10, 600) * 1000L) return@register
-            fetching = true
-            lastFetchMs = now
-
-            val name = client.user.name
-            executor.execute {
-                try {
-                    val balance = APIService.getStats(name)?.get("money")?.let(::parseDouble)
-                    if (balance != null) client.execute { onBalance(balance) }
-                } finally {
-                    fetching = false
-                }
-            }
+            val balance = TabListFooter.balance
+            currentBalance = balance
+            if (balance != null) onBalance(balance)
         }
     }
 
@@ -87,8 +66,7 @@ object ProfitTracker {
     }
 
     private fun onBalance(balance: Double) {
-        currentBalance = balance
-        // First balance of a new day (or first ever): that is the day's starting point.
+        // First balance of a new day (or first ever): that is the day's starting point, so profit resets to 0.
         if (config.startBalance < 0 || config.startDate != LocalDate.now().toString()) {
             setBaseline(balance)
         }
@@ -98,15 +76,5 @@ object ProfitTracker {
         config.startBalance = balance
         config.startDate = LocalDate.now().toString()
         MagicDonutConfig.save()
-    }
-
-    private fun parseDouble(element: JsonElement): Double? {
-        if (!element.isJsonPrimitive) return null
-        val primitive = element.asJsonPrimitive
-        return when {
-            primitive.isNumber -> primitive.asDouble
-            primitive.isString -> primitive.asString.trim().toDoubleOrNull()
-            else -> null
-        }
     }
 }

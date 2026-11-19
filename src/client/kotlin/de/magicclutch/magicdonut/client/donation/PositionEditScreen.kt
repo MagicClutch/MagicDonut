@@ -1,7 +1,6 @@
 package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import de.magicclutch.magicdonut.client.gui.MouseButton
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
@@ -207,4 +206,9 @@ class PositionEditScreen : Screen(Component.literal("Donation Editor")) {
         val screen = localToScreenRect(center.first, center.second, scale, local)
         return local to screen
     }
+}
+
+/** Mouse button numbers as Minecraft 26.x reports them (SDL numbering: left is 1, not 0). */
+private object MouseButton {
+    const val LEFT = 1
 }

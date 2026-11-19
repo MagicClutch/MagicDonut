@@ -129,17 +129,6 @@ object AuctionManager {
             client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f))
         }
     }
-
-    /** The text a seller can post in public chat so people know how to bid. */
-    fun announcementText(auction: Auction, sellerName: String?): String {
-        val item = auction.item
-        val name = "${item.count}x ${item.hoverName.string}"
-        val top = auction.highest
-        val bid = top?.let { "Top bid: $${AmountParser.formatShort(it.amount)} (${it.player})" }
-            ?: "Min bid: $${AmountParser.formatShort(auction.minimumBid)}"
-        val how = sellerName?.let { " | /pay $it <amount> to bid" } ?: ""
-        return "AUCTION: $name | $bid | ${auction.secondsLeft()}s left$how"
-    }
 }
 
 /** A point in front of the player (horizontally), slightly below eye height: where a new hologram floats. */

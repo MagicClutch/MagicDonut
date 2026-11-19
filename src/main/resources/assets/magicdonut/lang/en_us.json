@@ -25,11 +25,11 @@
 
   "magicdonut.config.auction": "Auction",
   "magicdonut.config.auction.tooltip": "Run your own auctions: hold an item, the highest payment wins.",
-  "magicdonut.config.auction.help": "Hold an item and use /auction start [seconds] [minBid]. Bids are payments to you; the highest one wins. Nothing is paid or refunded automatically.",
+  "magicdonut.config.auction.help": "Hold an item and use /bid start [seconds] [minBid]. Bids are payments to you; the highest one wins. Nothing is paid or refunded automatically.",
   "magicdonut.config.auction.enabled": "Show hologram panel",
   "magicdonut.config.auction.enabled.desc": "Show the floating item panel while an auction runs.",
   "magicdonut.config.auction.duration": "Default duration",
-  "magicdonut.config.auction.duration.desc": "Used when /auction start has no duration.",
+  "magicdonut.config.auction.duration.desc": "Used when /bid start has no duration.",
   "magicdonut.config.auction.minbid": "Default minimum bid",
   "magicdonut.config.auction.minbid.desc": "Payments below this amount are ignored.",
   "magicdonut.config.auction.sound": "Sound on new top bid",

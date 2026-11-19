@@ -1,83 +1,66 @@
 package de.magicclutch.magicdonut.client.config
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.stream.JsonReader
 import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
 import de.magicclutch.magicdonut.client.config.configuration.ProfitConfig
-import net.fabricmc.loader.api.FabricLoader
-import org.slf4j.LoggerFactory
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
+import org.polyfrost.oneconfig.api.config.v1.Config
+import org.polyfrost.oneconfig.api.config.v1.ConfigEntrypoint
+import org.polyfrost.oneconfig.api.config.v1.annotations.Accordion
 
 /**
- * All settings of the mod, stored as one JSON file (`config/magicdonut.json5`). Missing fields keep their defaults,
- * so new settings never break an existing file.
+ * All settings of the mod, managed by OneConfig (config file and settings screen).
+ *
+ * Each `@Accordion` field below only tells OneConfig which section classes to show. OneConfig creates its own
+ * instance of every section; the sections remember the instance that is bound to the file (`live`), and the
+ * accessors below hand that one out.
  */
-class MagicDonutConfig {
-    var developmentConfig: DevelopmentConfig = DevelopmentConfig()
-    var payConfirmConfig: PayConfirmConfig = PayConfirmConfig()
-    var donationConfig: DonationConfig = DonationConfig()
-    var overheadStatsConfig: OverheadStatsConfig = OverheadStatsConfig()
-    var auctionConfig: AuctionConfig = AuctionConfig()
-    var profitConfig: ProfitConfig = ProfitConfig()
+class MagicDonutConfig private constructor() :
+    Config("magicdonututils", "/assets/magicdonut/icon.png", "MagicDonutUtils", Category.QOL) {
+
+    @Accordion(title = "Pay Confirm", category = "Pay Confirm", description = "Confirm big payments")
+    @Suppress("unused")
+    private val payConfirm = PayConfirmConfig()
+
+    @Accordion(title = "Donation HUD", category = "Donation HUD", description = "Highest donation on screen")
+    @Suppress("unused")
+    private val donation = DonationConfig()
+
+    @Accordion(title = "Overhead Stats", category = "Overhead Stats", description = "Stats above name tags")
+    @Suppress("unused")
+    private val overheadStats = OverheadStatsConfig()
+
+    @Accordion(title = "Auction", category = "Auction", description = "Hologram auctions. /bid start while holding an item.")
+    @Suppress("unused")
+    private val auction = AuctionConfig()
+
+    @Accordion(title = "Daily Balance", category = "Daily Balance", description = "Today's profit HUD")
+    @Suppress("unused")
+    private val profit = ProfitConfig()
+
+    @Accordion(title = "Developer", category = "Developer", description = "API key and proxy")
+    @Suppress("unused")
+    private val development = DevelopmentConfig()
+
+    val payConfirmConfig: PayConfirmConfig get() = PayConfirmConfig.live
+    val donationConfig: DonationConfig get() = DonationConfig.live
+    val overheadStatsConfig: OverheadStatsConfig get() = OverheadStatsConfig.live
+    val auctionConfig: AuctionConfig get() = AuctionConfig.live
+    val profitConfig: ProfitConfig get() = ProfitConfig.live
+    val developmentConfig: DevelopmentConfig get() = DevelopmentConfig.live
 
     companion object {
-        private val logger = LoggerFactory.getLogger("MagicDonutUtils/Config")
-        private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+        val instance: MagicDonutConfig by lazy { MagicDonutConfig() }
 
-        private val path: Path
-            get() = FabricLoader.getInstance().configDir.resolve("magicdonut.json5")
+        fun save() = instance.save()
+    }
+}
 
-        @Volatile
-        var instance: MagicDonutConfig = load()
-            private set
-
-        private fun load(): MagicDonutConfig {
-            val file = path
-            if (!Files.exists(file)) return MagicDonutConfig().also { write(it) }
-            return try {
-                Files.newBufferedReader(file).use { reader ->
-                    // Lenient: also reads the JSON5 style files written by older versions of the mod.
-                    val json = JsonReader(reader).apply { isLenient = true }
-                    gson.fromJson<MagicDonutConfig>(json, MagicDonutConfig::class.java) ?: MagicDonutConfig()
-                }.also { write(it) } // re-save so new settings show up in the file
-            } catch (e: Exception) {
-                logger.error("Could not read {}, using defaults (the broken file is kept as .broken)", file, e)
-                runCatching { Files.move(file, file.resolveSibling("magicdonut.json5.broken"), StandardCopyOption.REPLACE_EXISTING) }
-                MagicDonutConfig()
-            }
-        }
-
-        /** Re-reads the file, for example after the user edited it by hand. */
-        fun reload() {
-            instance = load()
-        }
-
-        @Synchronized
-        fun save() = write(instance)
-
-        @Synchronized
-        private fun write(config: MagicDonutConfig) {
-            val file = path
-            try {
-                Files.createDirectories(file.parent)
-                val tmp = file.resolveSibling("magicdonut.json5.tmp")
-                Files.writeString(tmp, gson.toJson(config))
-                try {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-                } catch (_: AtomicMoveNotSupportedException) {
-                    Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING)
-                }
-            } catch (e: Exception) {
-                logger.error("Could not save {}", file, e)
-            }
-        }
+/** Registered as the `oneconfig:config` entrypoint in fabric.mod.json. */
+class MagicDonutConfigEntrypoint : ConfigEntrypoint {
+    override fun registerConfigs(context: ConfigEntrypoint.Context) {
+        context.register(MagicDonutConfig.instance)
     }
 }

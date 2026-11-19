@@ -49,12 +49,18 @@ fabricApi {
 }
 
 repositories {
-
-
-    maven("https://maven.terraformersmc.com/releases/") {
-        name = "Terraformers"
+    mavenCentral()
+    google()
+    // Transitive dependencies of OneConfig
+    maven("https://maven.terraformersmc.com/releases/") { content { includeGroup("com.terraformersmc") } }
+    maven("https://api.modrinth.com/maven") { content { includeGroup("maven.modrinth") } }
+    maven("https://repo.hypixel.net/repository/Hypixel/") { content { includeGroup("net.hypixel") } }
+    maven("https://maven.bawnorton.com/releases") { content { includeGroupAndSubgroups("com.github.bawnorton") } }
+    maven("https://repo.polyfrost.org/releases") {
+        name = "Polyfrost"
         content {
-            includeGroup("com.terraformersmc")
+            includeGroup("org.polyfrost")
+            includeGroup("org.polyfrost.oneconfig")
         }
     }
 }
@@ -66,8 +72,10 @@ dependencies {
     implementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
 
-    // Mod Menu entry (optional at runtime)
-    compileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    // OneConfig: settings library and screen. Players install it as a separate mod; in dev it runs from the classpath.
+    val oneConfig = "org.polyfrost.oneconfig:${project.property("minecraft_version")}-fabric:${project.property("oneconfig_version")}"
+    compileOnly(oneConfig)
+    localRuntime(oneConfig)
 
     // Dev only: not part of the mod, never shipped to players.
     localRuntime("net.litetex.mcm:dev-auth-neo:${project.property("devauth_neo_version")}")
@@ -78,7 +86,7 @@ tasks.processResources {
     inputs.property("version", project.version)
     inputs.property("minecraft_version", project.property("minecraft_version"))
     inputs.property("loader_version", project.property("loader_version"))
-    inputs.property("modmenu_version", project.property("modmenu_version"))
+    inputs.property("oneconfig_version", project.property("oneconfig_version"))
     filteringCharset = "UTF-8"
 
     filesMatching("fabric.mod.json") {
@@ -87,7 +95,7 @@ tasks.processResources {
             "minecraft_version" to project.property("minecraft_version")!!,
             "loader_version" to project.property("loader_version")!!,
             "kotlin_loader_version" to project.property("kotlin_loader_version")!!,
-            "modmenu_version" to project.property("modmenu_version")!!
+            "oneconfig_version" to project.property("oneconfig_version")!!
         )
     }
 }
