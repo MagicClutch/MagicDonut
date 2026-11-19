@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player
 
 object PayConfirmClient {
     private var pendingCommand: String? = null
+    private var pendingSummary: String = ""
     private var pendingDeadlineMs: Long = 0L
 
     fun init() {
@@ -54,8 +55,14 @@ object PayConfirmClient {
                 ClientCommands.literal("payconfirm").executes { context ->
                     val command = pendingCommand
                     if (command != null) {
+                        val summary = pendingSummary
                         cancelPending()
                         sendCommand(command)
+                        context.source.sendFeedback(
+                            Component.literal("✔ Payment accepted: ").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
+                                .append(Component.literal(summary).withStyle(ChatFormatting.WHITE))
+                        )
+                        scrollChatToBottom()
                     } else {
                         context.source.sendError(Component.literal("No payment pending.").withStyle(ChatFormatting.RED))
                     }
@@ -70,6 +77,7 @@ object PayConfirmClient {
                         context.source.sendFeedback(
                             Component.literal("Payment cancelled.").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD)
                         )
+                        scrollChatToBottom()
                     } else {
                         context.source.sendError(Component.literal("There are no payments in process.").withStyle(ChatFormatting.RED))
                     }
@@ -125,6 +133,7 @@ object PayConfirmClient {
         }
 
         pendingCommand = fullCommand
+        pendingSummary = "$${AmountParser.formatShort(amount)} to $target"
         pendingDeadlineMs = System.currentTimeMillis() + config.timeoutSeconds.coerceAtLeast(1) * 1000L
 
         source.sendFeedback(
@@ -157,6 +166,14 @@ object PayConfirmClient {
         // Send the packet directly: ClientPacketListener.sendCommand is intercepted by Fabric's client command
         // handler and would route this straight back into our own /pay command (infinite recursion).
         MinecraftClientService.client.player?.connection?.send(ServerboundChatCommandPacket(command))
+    }
+
+    /**
+     * Clicking a button in an old chat message leaves the chat scrolled up, so the confirmation would be out of sight.
+     * Jump back to the newest message.
+     */
+    private fun scrollChatToBottom() {
+        MinecraftClientService.client.gui.hud.getChat().resetChatScroll()
     }
 
     private fun cancelPending() {

@@ -3,6 +3,7 @@ package de.magicclutch.magicdonut.client.donation
 import de.magicclutch.magicdonut.client.auction.AuctionManager
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
+import de.magicclutch.magicdonut.client.streamgamble.StreamGambleManager
 import net.minecraft.network.chat.Component
 
 object DonationManager {
@@ -27,6 +28,7 @@ object DonationManager {
         }
 
         AuctionManager.onPayment(playerName, base * multiplier)
+        StreamGambleManager.onPayment(playerName, base * multiplier)
 
         val newDonation = Donation(playerName, base * multiplier)
         val currentHighest = config.getHighestDonation()

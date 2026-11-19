@@ -8,6 +8,7 @@ import de.magicclutch.magicdonut.client.donation.PositionEditScreen
 import de.magicclutch.magicdonut.client.gamble.GambleScreen
 import de.magicclutch.magicdonut.client.profit.ProfitTracker
 import de.magicclutch.magicdonut.client.service.APIService
+import de.magicclutch.magicdonut.client.streamgamble.StreamGambleManager
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.world.item.Item
@@ -89,6 +90,7 @@ object SettingsCatalog {
             overheadStats(c),
             auction(c),
             gamble(c, current),
+            streamGamble(c),
             dailyBalance(c),
             developer(c),
             commands(),
@@ -170,6 +172,31 @@ object SettingsCatalog {
         }
     }
 
+    private fun streamGamble(c: MagicDonutConfig) = page(
+        "Stream Gamble", Items.GOLD_BLOCK, "Viewers pay, items decide",
+        toggle = ({ c.streamGambleConfig.enabled } to { v: Boolean -> c.streamGambleConfig.enabled = v; MagicDonutConfig.save() })
+    ) {
+        val s = c.streamGambleConfig
+        header("How it works")
+        info { "A viewer pays you, an item strip decides who wins. You pay winners out yourself." }
+        info(color = { Theme.GOLD }) { "The odds are always shown on screen, so viewers know what they play." }
+        header("Round")
+        toggle("Overlay enabled", "Show the stream overlay and react to payments.", { s.enabled }, { s.enabled = it })
+        toggle("Start on payment", "Every payment of at least the minimum stake starts a round.", { s.autoStart }, { s.autoStart = it })
+        intSlider("Your win chance", "Chance that you (the host) win a round. Shown to viewers.", 50, 90, 1, "%", { s.hostChancePercent }, { s.hostChancePercent = it })
+        slider("Win payout", "What a winning player gets back, as a multiple of their stake.", 1.1f, 3f, 0.1f, "x", { s.payoutMultiplier }, { s.payoutMultiplier = it })
+        amount("Minimum stake", "Smaller payments are ignored. Accepts 1000, 1k or 2.5m.", { s.minStake }, { s.minStake = it.coerceAtLeast(1L) })
+        text("Host name", "Shown as the host. Leave empty to use your Minecraft name.", 32, { s.hostName }, { s.hostName = it })
+        header("Overlay")
+        slider("Scale", "Size of the overlay.", 0.5f, 2.5f, 0.1f, "x", { s.scale }, { s.scale = it })
+        slider("Vertical position", "0 is the top of the screen.", 0f, 0.85f, 0.01f, "", { s.y }, { s.y = it })
+        toggle("Sounds", "Ticks while the strip spins and a result sound.", { s.soundEnabled }, { s.soundEnabled = it })
+        header("Control")
+        button("Test round", "Runs a fake round to check the overlay.", "Test") { StreamGambleManager.enqueue("TestPlayer", 1_000_000L) }
+        button("Skip current round", "Ends the running round without a result.", "Skip", danger = true) { StreamGambleManager.skip() }
+        button("Clear queue", "Removes the running round and everything waiting.", "Clear", danger = true) { StreamGambleManager.clear() }
+    }
+
     private fun dailyBalance(c: MagicDonutConfig) = page("Daily Balance", Items.CLOCK, "Today's profit HUD", ({ c.profitConfig.enabled } to { v: Boolean -> c.profitConfig.enabled = v; MagicDonutConfig.save() })) {
         val p = c.profitConfig
         header("HUD")
@@ -207,6 +234,7 @@ object SettingsCatalog {
         info { "/auction start [s] [minBid] Auction the item in your hand" }
         info { "/auction status | end | cancel | announce" }
         info { "/gamble                     Open the slot machine" }
+        info { "/streamgamble test <name> <amount> | skip | clear" }
         info { "/dailybalance [start|reset|toggle]" }
         info { "/donation reset             Reset the donation highscore" }
         info { "/magicdonututils            Open this screen" }
