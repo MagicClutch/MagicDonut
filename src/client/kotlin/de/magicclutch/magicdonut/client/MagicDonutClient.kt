@@ -12,6 +12,9 @@ import de.magicclutch.magicdonut.client.donation.DonationManager
 import de.magicclutch.magicdonut.client.donation.DonationRenderer
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
 import de.magicclutch.magicdonut.client.payconfirm.PayConfirmClient
+import de.magicclutch.magicdonut.client.profit.ProfitCommand
+import de.magicclutch.magicdonut.client.profit.ProfitRenderer
+import de.magicclutch.magicdonut.client.profit.ProfitTracker
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
@@ -56,6 +59,9 @@ class MagicDonutClient : ClientModInitializer {
         AuctionRenderer.register()
         AuctionCommand.register()
         GambleCommand.register()
+        ProfitTracker.init()
+        ProfitRenderer.register()
+        ProfitCommand.register()
     }
 
     companion object {

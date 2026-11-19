@@ -7,12 +7,14 @@ import de.magicclutch.magicdonut.client.config.category.DonationCategory
 import de.magicclutch.magicdonut.client.config.category.GambleCategory
 import de.magicclutch.magicdonut.client.config.category.OverheadStatsCategory
 import de.magicclutch.magicdonut.client.config.category.PayConfirmCategory
+import de.magicclutch.magicdonut.client.config.category.ProfitCategory
 import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
 import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
 import de.magicclutch.magicdonut.client.config.configuration.GambleConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
+import de.magicclutch.magicdonut.client.config.configuration.ProfitConfig
 import dev.isxander.yacl3.api.YetAnotherConfigLib
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler
 import dev.isxander.yacl3.config.v2.api.SerialEntry
@@ -51,6 +53,7 @@ class MagicDonutConfig {
                     .category(OverheadStatsCategory.create(defaults, config))
                     .category(AuctionCategory.create(defaults, config))
                     .category(GambleCategory.create(defaults, config))
+                    .category(ProfitCategory.create(defaults, config))
                     .category(DevelopmentCategory.create(defaults, config))
 
 
@@ -75,4 +78,7 @@ class MagicDonutConfig {
 
     @SerialEntry
     var gambleConfig: GambleConfig = GambleConfig()
+
+    @SerialEntry
+    var profitConfig: ProfitConfig = ProfitConfig()
 }
