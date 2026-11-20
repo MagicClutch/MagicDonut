@@ -2,13 +2,12 @@ package de.magicclutch.magicdonut.client.config
 
 import de.magicclutch.magicdonut.client.config.configuration.AuctionConfig
 import de.magicclutch.magicdonut.client.config.configuration.DevelopmentConfig
-import de.magicclutch.magicdonut.client.config.configuration.DonationConfig
 import de.magicclutch.magicdonut.client.config.configuration.OverheadStatsConfig
 import de.magicclutch.magicdonut.client.config.configuration.PayConfirmConfig
-import de.magicclutch.magicdonut.client.config.configuration.ProfitConfig
 import org.polyfrost.oneconfig.api.config.v1.Config
 import org.polyfrost.oneconfig.api.config.v1.ConfigEntrypoint
 import org.polyfrost.oneconfig.api.config.v1.annotations.Accordion
+import de.magicclutch.magicdonut.client.donation.Donation
 
 /**
  * All settings of the mod, managed by OneConfig (config file and settings screen).
@@ -24,10 +23,6 @@ class MagicDonutConfig private constructor() :
     @Suppress("unused")
     private val payConfirm = PayConfirmConfig()
 
-    @Accordion(title = "Donation HUD", category = "Donation HUD", description = "Highest donation on screen")
-    @Suppress("unused")
-    private val donation = DonationConfig()
-
     @Accordion(title = "Overhead Stats", category = "Overhead Stats", description = "Stats above name tags")
     @Suppress("unused")
     private val overheadStats = OverheadStatsConfig()
@@ -36,20 +31,46 @@ class MagicDonutConfig private constructor() :
     @Suppress("unused")
     private val auction = AuctionConfig()
 
-    @Accordion(title = "Daily Balance", category = "Daily Balance", description = "Today's profit HUD")
-    @Suppress("unused")
-    private val profit = ProfitConfig()
-
     @Accordion(title = "Developer", category = "Developer", description = "API key and proxy")
     @Suppress("unused")
     private val development = DevelopmentConfig()
 
     val payConfirmConfig: PayConfirmConfig get() = PayConfirmConfig.live
-    val donationConfig: DonationConfig get() = DonationConfig.live
     val overheadStatsConfig: OverheadStatsConfig get() = OverheadStatsConfig.live
     val auctionConfig: AuctionConfig get() = AuctionConfig.live
-    val profitConfig: ProfitConfig get() = ProfitConfig.live
     val developmentConfig: DevelopmentConfig get() = DevelopmentConfig.live
+
+    // Stored data of the HUDs. Kept in a separate file (see DataStore) so nothing extra shows up in the settings screen.
+    var profitStartBalance: Double
+        get() = DataStore.data.profitStartBalance
+        set(value) {
+            DataStore.data.profitStartBalance = value
+            DataStore.save()
+        }
+
+    var profitStartDate: String
+        get() = DataStore.data.profitStartDate
+        set(value) {
+            DataStore.data.profitStartDate = value
+            DataStore.save()
+        }
+
+    fun highestDonation(): Donation? {
+        val player = DataStore.data.highestDonationPlayer ?: return null
+        return Donation(player, DataStore.data.highestDonationAmount)
+    }
+
+    fun recordDonation(donation: Donation) {
+        DataStore.data.highestDonationPlayer = donation.playerName
+        DataStore.data.highestDonationAmount = donation.amount
+        DataStore.save()
+    }
+
+    fun resetDonation() {
+        DataStore.data.highestDonationPlayer = null
+        DataStore.data.highestDonationAmount = 0.0
+        DataStore.save()
+    }
 
     companion object {
         val instance: MagicDonutConfig by lazy { MagicDonutConfig() }

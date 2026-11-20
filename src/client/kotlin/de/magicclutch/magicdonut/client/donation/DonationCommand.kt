@@ -23,7 +23,7 @@ object DonationCommand {
         dispatcher.register(
             literal("donation")
                 .then(literal("reset").executes { context ->
-                    MagicDonutConfig.instance.donationConfig.reset()
+                    MagicDonutConfig.instance.resetDonation()
 
                     context.source.sendFeedback(Component.literal("[MagicDonut] Donation-HUD reset!").withStyle(ChatFormatting.GREEN))
                     1

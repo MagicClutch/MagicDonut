@@ -6,11 +6,11 @@ import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.minecraft.network.chat.Component
 
 object DonationManager {
-    private val config get() = MagicDonutConfig.instance.donationConfig
+    private val config get() = MagicDonutConfig.instance
 
     // "<name> paid you $<number>[k|m|b]". The name token may start with '.' (Bedrock players),
     // the number may contain thousands separators ("1,000").
-    private val regex = Regex("""(\S+) paid you \$(\d[\d,]*(?:\.\d+)?)\s*([kmbKMB]?)""")
+    private val regex = Regex("""(\S+) paid you \$\s*(\d[\d,]*(?:\.\d+)?)\s*([kmbKMB]?)""")
 
     fun handleChatMessage(message: Component) {
         if (!MinecraftClientService.isOnDonut) return
@@ -29,9 +29,9 @@ object DonationManager {
         AuctionManager.onPayment(playerName, base * multiplier)
 
         val newDonation = Donation(playerName, base * multiplier)
-        val currentHighest = config.getHighestDonation()
+        val currentHighest = config.highestDonation()
         if (currentHighest == null || newDonation.amount > currentHighest.amount) {
-            config.setHighestDonation(newDonation)
+            config.recordDonation(newDonation)
         }
     }
 }

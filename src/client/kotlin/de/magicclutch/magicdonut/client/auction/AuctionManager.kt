@@ -6,7 +6,10 @@ import de.magicclutch.magicdonut.client.util.AmountParser
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
+import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.HoverEvent
+import net.minecraft.network.chat.MutableComponent
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
@@ -24,8 +27,12 @@ object AuctionManager {
     class Auction(
         val item: ItemStack,
         val minimumBid: Long,
-        val endsAtMs: Long,
+        @Volatile var endsAtMs: Long,
     ) {
+        /** When the last bid added time, and how much, for the "+3s" effect. */
+        @Volatile var lastBonusAtMs: Long = 0L
+        @Volatile var lastBonusSeconds: Int = 0
+
         val bids: MutableList<Bid> = mutableListOf()
 
         /** Where the hologram floats in the world. */
@@ -98,8 +105,35 @@ object AuctionManager {
                 .append(Component.literal("$" + AmountParser.formatShort(winner.amount)).withStyle(ChatFormatting.GREEN))
         }
         MinecraftClientService.sendChatMessage(message)
+        if (winner != null) sendWinnerButtons(winner.player)
+
+        if (MagicDonutConfig.instance.auctionConfig.playEndSound) {
+            MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.0f))
+        }
         return auction
     }
+
+    // Player names come from chat, so only allow what a username can contain before putting it in a command.
+    private val safeName = Regex("""[A-Za-z0-9_.]{1,32}""")
+
+    /** Two clickable buttons under the result: reach the winner to hand over the item. */
+    private fun sendWinnerButtons(player: String) {
+        if (!safeName.matches(player)) return
+        MinecraftClientService.sendChatMessage(
+            Component.literal("[Auction] ").withStyle(ChatFormatting.GOLD)
+                .append(button("[Send Teleport Request]", ChatFormatting.AQUA, "/tpa $player"))
+                .append(Component.literal("  "))
+                .append(button("[Open Orders]", ChatFormatting.YELLOW, "/orders $player"))
+        )
+    }
+
+    private fun button(label: String, color: ChatFormatting, command: String): MutableComponent =
+        Component.literal(label).withStyle { style ->
+            style.withColor(color)
+                .withBold(true)
+                .withClickEvent(ClickEvent.RunCommand(command))
+                .withHoverEvent(HoverEvent.ShowText(Component.literal(command).withStyle(color)))
+        }
 
     fun cancel(): Boolean {
         if (current == null) return false
@@ -111,6 +145,17 @@ object AuctionManager {
     fun onPayment(player: String, amount: Double) {
         val auction = current ?: return
         if (amount < auction.minimumBid) return
+
+        val config = MagicDonutConfig.instance.auctionConfig
+
+        // Every valid payment buys a little more time (anti-sniping), with a small effect.
+        val bonus = config.bidTimeBonusSeconds.coerceAtLeast(0)
+        if (bonus > 0) {
+            auction.endsAtMs += bonus * 1000L
+            auction.lastBonusAtMs = System.currentTimeMillis()
+            auction.lastBonusSeconds = bonus
+        }
+        if (config.bidEffect) AuctionHologram.burst(auction)
 
         val previousTop = auction.highest
         auction.bids += Bid(player, amount)
@@ -124,7 +169,7 @@ object AuctionManager {
                 .append(Component.literal(player).withStyle(ChatFormatting.GREEN))
         )
 
-        if (MagicDonutConfig.instance.auctionConfig.playBidSound) {
+        if (config.playBidSound) {
             val client = MinecraftClientService.client
             client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f))
         }

@@ -1,5 +1,4 @@
 {
-  "magicdonut.quickpay": "QuickPay",
   "magicdonut.config.title": "MagicDonutUtils Config",
   "magicdonut.config.group.general": "General",
   "magicdonut.config.group.hologram": "Hologram Panel",
@@ -39,7 +38,6 @@
   "magicdonut.config.auction.bobbing": "Floating animation",
 
 
-  "magicdonut.toggle_profit": "Toggle balance HUD",
   "magicdonut.config.group.layout": "Layout",
   "magicdonut.config.profit": "Daily Balance",
   "magicdonut.config.profit.tooltip": "Track how much money you made today.",

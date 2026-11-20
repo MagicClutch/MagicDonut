@@ -2,16 +2,19 @@ package de.magicclutch.magicdonut.client.auction
 
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.util.AmountParser
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.item.ItemStackRenderState
 import net.minecraft.client.renderer.texture.OverlayTexture
+import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
+import kotlin.math.cos
 import kotlin.math.sin
 
 /**
@@ -24,8 +27,52 @@ object AuctionHologram {
 
     private val itemState = ItemStackRenderState()
 
+    private const val BONUS_TEXT_MS = 1800L
+    private const val RING_POINTS = 8
+    private const val RING_RADIUS = 0.62
+
     fun register() {
         LevelRenderEvents.COLLECT_SUBMITS.register { render(it) }
+        ClientTickEvents.END_CLIENT_TICK.register { tickRing(it) }
+    }
+
+    /** A ring of glowing particles that circles the item while the auction runs. */
+    private fun tickRing(mc: Minecraft) {
+        val level = mc.level ?: return
+        val config = MagicDonutConfig.instance.auctionConfig
+        if (!config.enabled || !config.glowRing) return
+        val anchor = AuctionManager.current?.anchor ?: return
+
+        val radius = RING_RADIUS * config.scale.coerceIn(0.5f, 3f)
+        val phase = System.currentTimeMillis() / 1000.0 * 2.2
+        for (i in 0 until RING_POINTS) {
+            val angle = phase + i * (2 * Math.PI / RING_POINTS)
+            level.addParticle(
+                ParticleTypes.END_ROD,
+                anchor.x + cos(angle) * radius, anchor.y + 0.05, anchor.z + sin(angle) * radius,
+                0.0, 0.0, 0.0
+            )
+        }
+    }
+
+    /** One-off burst when a bid comes in: sparks fly outwards from the item. */
+    fun burst(auction: AuctionManager.Auction) {
+        val anchor = auction.anchor ?: return
+        val mc = Minecraft.getInstance()
+        mc.execute {
+            val level = mc.level ?: return@execute
+            for (i in 0 until 36) {
+                val angle = i * (2 * Math.PI / 36)
+                level.addParticle(
+                    ParticleTypes.FIREWORK,
+                    anchor.x, anchor.y + 0.05, anchor.z,
+                    cos(angle) * 0.18, 0.03, sin(angle) * 0.18
+                )
+            }
+            for (i in 0 until 10) {
+                level.addParticle(ParticleTypes.END_ROD, anchor.x, anchor.y, anchor.z, 0.0, 0.12 + i * 0.01, 0.0)
+            }
+        }
     }
 
     private fun render(context: LevelRenderContext) {
@@ -87,6 +134,14 @@ object AuctionHologram {
             collector.submitNameTag(pose, Vec3(0.0, 0.62, 0.0), 0, subtitle, true, FULL_BRIGHT, camState)
             collector.submitNameTag(pose, Vec3(0.0, 0.88, 0.0), 0, name, true, FULL_BRIGHT, camState)
             collector.submitNameTag(pose, Vec3(0.0, 1.14, 0.0), 0, timeLine, true, FULL_BRIGHT, camState)
+
+            // "+3s" floats up above the timer for a moment after every bid.
+            val sinceBonus = System.currentTimeMillis() - auction.lastBonusAtMs
+            if (running != null && config.bidEffect && auction.lastBonusSeconds > 0 && sinceBonus in 0..BONUS_TEXT_MS) {
+                val rise = sinceBonus.toDouble() / BONUS_TEXT_MS
+                val bonusLine = Component.literal("+${auction.lastBonusSeconds}s").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
+                collector.submitNameTag(pose, Vec3(0.0, 1.45 + rise * 0.5, 0.0), 0, bonusLine, true, FULL_BRIGHT, camState)
+            }
             pose.popPose()
         } finally {
             pose.popPose()

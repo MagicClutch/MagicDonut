@@ -1,11 +1,8 @@
 package de.magicclutch.magicdonut.client.profit
 
-import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
-import net.minecraft.client.KeyMapping
 import java.time.LocalDate
 
 /**
@@ -14,12 +11,7 @@ import java.time.LocalDate
  * point is stored in the config.
  */
 object ProfitTracker {
-    // Unbound by default; players pick their own key in the controls screen.
-    val toggleBinding: KeyMapping = KeyMappingHelper.registerKeyMapping(
-        KeyMapping("magicdonut.toggle_profit", InputConstants.UNKNOWN.value, KeyMapping.Category.MISC)
-    )
-
-    private val config get() = MagicDonutConfig.instance.profitConfig
+    private val config get() = MagicDonutConfig.instance
 
     @Volatile
     var currentBalance: Double? = null
@@ -29,17 +21,12 @@ object ProfitTracker {
     val profitToday: Double?
         get() {
             val current = currentBalance ?: return null
-            if (config.startBalance < 0) return null
-            return current - config.startBalance
+            if (config.profitStartBalance < 0) return null
+            return current - config.profitStartBalance
         }
 
     fun init() {
         ClientTickEvents.END_CLIENT_TICK.register { client ->
-            while (toggleBinding.consumeClick()) {
-                config.enabled = !config.enabled
-                MagicDonutConfig.save()
-            }
-
             if (client.level == null || !MinecraftClientService.isOnDonut) {
                 currentBalance = null
                 if (client.level == null) TabListFooter.clear()
@@ -60,21 +47,21 @@ object ProfitTracker {
     }
 
     fun resetBaseline() {
-        config.startBalance = -1.0
-        config.startDate = ""
+        config.profitStartBalance = -1.0
+        config.profitStartDate = ""
         MagicDonutConfig.save()
     }
 
     private fun onBalance(balance: Double) {
         // First balance of a new day (or first ever): that is the day's starting point, so profit resets to 0.
-        if (config.startBalance < 0 || config.startDate != LocalDate.now().toString()) {
+        if (config.profitStartBalance < 0 || config.profitStartDate != LocalDate.now().toString()) {
             setBaseline(balance)
         }
     }
 
     private fun setBaseline(balance: Double) {
-        config.startBalance = balance
-        config.startDate = LocalDate.now().toString()
+        config.profitStartBalance = balance
+        config.profitStartDate = LocalDate.now().toString()
         MagicDonutConfig.save()
     }
 }

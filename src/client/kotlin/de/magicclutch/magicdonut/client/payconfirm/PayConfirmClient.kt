@@ -2,7 +2,6 @@ package de.magicclutch.magicdonut.client.payconfirm
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
-import de.magicclutch.magicdonut.client.MagicDonutClient
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import de.magicclutch.magicdonut.client.util.AmountParser
@@ -101,7 +100,7 @@ object PayConfirmClient {
         }
 
         UseEntityCallback.EVENT.register { _, _, _, entity, _ ->
-            if (!MagicDonutClient.payButtonBinding.isDown) return@register InteractionResult.PASS
+            if (!QuickPayState.held) return@register InteractionResult.PASS
 
             val target = entity as? Player ?: return@register InteractionResult.PASS
 

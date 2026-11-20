@@ -1,8 +1,8 @@
 package de.magicclutch.magicdonut.client.config.configuration
 
-import org.polyfrost.oneconfig.api.config.v1.annotations.Number
 import org.polyfrost.oneconfig.api.config.v1.annotations.Slider
 import org.polyfrost.oneconfig.api.config.v1.annotations.Switch
+import org.polyfrost.oneconfig.api.config.v1.annotations.Text
 
 class AuctionConfig {
     @Switch(title = "Show hologram", description = "The item floats in the world in front of you while an auction runs.")
@@ -21,14 +21,26 @@ class AuctionConfig {
     @Slider(title = "Default duration", description = "Seconds, used when /bid start has no duration.", min = 10f, max = 900f, step = 10f)
     var defaultDurationSeconds: Int = 120
 
-    @Number(title = "Default minimum bid", description = "Payments below this are ignored.", min = 0f, max = 1_000_000_000f)
-    var defaultMinimumBid: Long = 1_000L
+    @Text(title = "Default minimum bid", description = "Payments below this are ignored. Short forms work: 500, 10k, 2.5m, 1b.")
+    var defaultMinimumBid: String = "1k"
+
+    @Slider(title = "Time added per bid", description = "Seconds added to the timer for every payment (bid). 0 turns it off.", min = 0f, max = 30f, step = 1f)
+    var bidTimeBonusSeconds: Int = 3
+
+    @Switch(title = "Bid effect", description = "A burst of particles and a floating +time text whenever a bid comes in.")
+    var bidEffect: Boolean = true
+
+    @Switch(title = "Glow ring", description = "A glowing ring of light circles the item while the auction runs.")
+    var glowRing: Boolean = true
 
     @Switch(title = "Floating animation", description = "The item gently bobs up and down.")
     var bobbingItem: Boolean = true
 
     @Switch(title = "Sound on new top bid", description = "A short sound when someone takes the lead.")
     var playBidSound: Boolean = true
+
+    @Switch(title = "Sound when auction ends", description = "The level-up jingle when the timer runs out.")
+    var playEndSound: Boolean = true
 
     // The flat panel on the HUD, in addition to the hologram in the world.
     @Switch(title = "Also show HUD panel", description = "A flat panel on screen in addition to the hologram.")

@@ -1,6 +1,5 @@
 package de.magicclutch.magicdonut.client
 
-import com.mojang.blaze3d.platform.InputConstants
 import de.magicclutch.magicdonut.client.auction.AuctionCommand
 import de.magicclutch.magicdonut.client.auction.AuctionHologram
 import de.magicclutch.magicdonut.client.auction.AuctionManager
@@ -9,21 +8,21 @@ import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.donation.DonationCommand
 import de.magicclutch.magicdonut.client.donation.DonationManager
-import de.magicclutch.magicdonut.client.donation.DonationRenderer
+import de.magicclutch.magicdonut.client.hud.BalanceHud
+import de.magicclutch.magicdonut.client.hud.DonationHud
+import de.magicclutch.magicdonut.client.hud.ProfitHud
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
 import de.magicclutch.magicdonut.client.payconfirm.PayConfirmClient
 import de.magicclutch.magicdonut.client.profit.ProfitCommand
-import de.magicclutch.magicdonut.client.profit.ProfitRenderer
 import de.magicclutch.magicdonut.client.profit.ProfitTracker
 import de.magicclutch.magicdonut.client.service.APIService
 import de.magicclutch.magicdonut.client.service.MinecraftClientService
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.ChatFormatting
-import net.minecraft.client.KeyMapping
 import net.minecraft.network.chat.Component
+import org.polyfrost.oneconfig.api.hud.v1.HudManager
 
 class MagicDonutClient : ClientModInitializer {
     override fun onInitializeClient() {
@@ -54,24 +53,13 @@ class MagicDonutClient : ClientModInitializer {
         StatsRenderer.init()
         PayConfirmClient.init()
         DonationCommand.register()
-        DonationRenderer.register()
+        HudManager.register(DonationHud(), BalanceHud(), ProfitHud())
         AuctionManager.init()
         AuctionRenderer.register()
         AuctionHologram.register()
         AuctionCommand.register()
         ProfitTracker.init()
-        ProfitRenderer.register()
         ProfitCommand.register()
     }
 
-    companion object {
-        private val category = KeyMapping.Category.MISC
-        val payButtonBinding: KeyMapping = KeyMappingHelper.registerKeyMapping(
-            KeyMapping(
-                "magicdonut.quickpay",
-                InputConstants.KEY_LCONTROL,
-                category
-            )
-        )
-    }
 }
