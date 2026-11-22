@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component
 /**
  * /bid start [seconds] [minimumBid]  - auction the item in your main hand
  * /bid status | end | cancel | move
+ * /bid delay <seconds>  - stream delay (0-60 s): the timer restarts at this value when it hits 0
  */
 object AuctionCommand {
     fun register() {
@@ -44,6 +45,12 @@ object AuctionCommand {
                     .then(ClientCommands.literal("end").executes { end(it.source) })
                     .then(ClientCommands.literal("cancel").executes { cancel(it.source) })
                     .then(ClientCommands.literal("move").executes { move(it.source) })
+                    .then(
+                        ClientCommands.literal("delay").then(
+                            ClientCommands.argument("seconds", IntegerArgumentType.integer(0, AuctionManager.MAX_STREAM_DELAY_SECONDS))
+                                .executes { delay(it.source, IntegerArgumentType.getInteger(it, "seconds")) }
+                        )
+                    )
             )
         }
     }
@@ -72,7 +79,6 @@ object AuctionCommand {
         val player = MinecraftClientService.client.player!!
         AuctionManager.start(held, seconds ?: config.defaultDurationSeconds, minBid, anchorInFront(player))
         info(source, "Auction started. Bids are payments to you; the highest payment wins.")
-        info(source, "Remember to refund the losing bidders.")
         return Command.SINGLE_SUCCESS
     }
 
@@ -93,6 +99,15 @@ object AuctionCommand {
 
     private fun end(source: FabricClientCommandSource): Int {
         if (AuctionManager.end() == null) error(source, "No auction is running.")
+        return Command.SINGLE_SUCCESS
+    }
+
+    private fun delay(source: FabricClientCommandSource, seconds: Int): Int {
+        if (AuctionManager.setStreamDelay(seconds)) {
+            info(source, "Stream delay set to ${seconds}s: when the timer hits 0 it restarts at that value.")
+        } else {
+            error(source, "No auction is running.")
+        }
         return Command.SINGLE_SUCCESS
     }
 

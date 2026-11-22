@@ -2,33 +2,20 @@ package de.magicclutch.magicdonut.client.donation
 
 import de.magicclutch.magicdonut.client.auction.AuctionManager
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
-import de.magicclutch.magicdonut.client.service.MinecraftClientService
-import net.minecraft.network.chat.Component
+import de.magicclutch.magicdonut.client.payment.Payment
+import de.magicclutch.magicdonut.client.payment.PaymentListener
 
 object DonationManager {
     private val config get() = MagicDonutConfig.instance
 
-    // "<name> paid you $<number>[k|m|b]". The name token may start with '.' (Bedrock players),
-    // the number may contain thousands separators ("1,000").
-    private val regex = Regex("""(\S+) paid you \$\s*(\d[\d,]*(?:\.\d+)?)\s*([kmbKMB]?)""")
+    fun init() {
+        PaymentListener.onReceived { handlePayment(it) }
+    }
 
-    fun handleChatMessage(message: Component) {
-        if (!MinecraftClientService.isOnDonut) return
+    private fun handlePayment(payment: Payment) {
+        AuctionManager.onPayment(payment.player, payment.amount)
 
-        val match = regex.find(message.string) ?: return
-
-        val playerName = match.groupValues[1]
-        val base = match.groupValues[2].replace(",", "").toDoubleOrNull() ?: return
-        val multiplier = when (match.groupValues[3].lowercase()) {
-            "k" -> 1_000.0
-            "m" -> 1_000_000.0
-            "b" -> 1_000_000_000.0
-            else -> 1.0
-        }
-
-        AuctionManager.onPayment(playerName, base * multiplier)
-
-        val newDonation = Donation(playerName, base * multiplier)
+        val newDonation = Donation(payment.player, payment.amount)
         val currentHighest = config.highestDonation()
         if (currentHighest == null || newDonation.amount > currentHighest.amount) {
             config.recordDonation(newDonation)

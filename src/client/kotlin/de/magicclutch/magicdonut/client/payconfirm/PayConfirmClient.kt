@@ -12,6 +12,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.minecraft.ChatFormatting
 import net.minecraft.client.gui.screens.ChatScreen
+import net.minecraft.client.gui.screens.ConfirmScreen
+import net.minecraft.client.input.KeyEvent
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
@@ -128,6 +130,42 @@ object PayConfirmClient {
 
         if (!config.enabled || amount < config.confirmThreshold) {
             sendCommand(fullCommand)
+            return Command.SINGLE_SUCCESS
+        }
+
+        if (config.usePopup) {
+            // "Send $5m to Steve?" with the amount in green and the player in aqua.
+            val question = Component.literal("Send ").withStyle(ChatFormatting.WHITE)
+                .append(Component.literal("$" + AmountParser.formatShort(amount)).withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD))
+                .append(Component.literal(" to ").withStyle(ChatFormatting.WHITE))
+                .append(Component.literal(target).withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD))
+                .append(Component.literal("?").withStyle(ChatFormatting.WHITE))
+            // Opened on the next tick so the chat screen doesn't close it again after sending the command.
+            fun answer(yes: Boolean) {
+                MinecraftClientService.client.gui.setScreen(null)
+                if (yes) {
+                    sendCommand(fullCommand)
+                } else {
+                    MinecraftClientService.sendChatMessage(Component.literal("Payment cancelled.").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD))
+                }
+            }
+            MinecraftClientService.client.execute {
+                // Yes sits on the right: ConfirmScreen's left button (its "yes") is labelled "No" and the answer is
+                // flipped. ESC would report the left button too, so it is caught here and always cancels.
+                val screen = object : ConfirmScreen(
+                    { leftClicked -> answer(!leftClicked) },
+                    question, Component.empty(), Component.translatable("gui.no"), Component.translatable("gui.yes"),
+                ) {
+                    override fun keyPressed(event: KeyEvent): Boolean {
+                        if (event.isEscape) {
+                            answer(false)
+                            return true
+                        }
+                        return super.keyPressed(event)
+                    }
+                }
+                MinecraftClientService.client.gui.setScreen(screen)
+            }
             return Command.SINGLE_SUCCESS
         }
 

@@ -3,7 +3,7 @@ package de.magicclutch.magicdonut.client.config.configuration
 import org.polyfrost.oneconfig.api.config.v1.annotations.Text
 
 class DevelopmentConfig {
-    @Text(title = "API key", description = "Your personal DonutSMP API key. Never share it. Leave empty when using a proxy.")
+    @Text(title = "API key", description = "Your DonutSMP API key. Never share it. Empty when you use a proxy.")
     var apiKey: String = ""
 
     // Base URL of the stats API. Only change this to point at a proxy you trust.

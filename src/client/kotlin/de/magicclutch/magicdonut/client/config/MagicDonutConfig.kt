@@ -19,7 +19,7 @@ import de.magicclutch.magicdonut.client.donation.Donation
 class MagicDonutConfig private constructor() :
     Config("magicdonututils", "/assets/magicdonut/icon.png", "MagicDonutUtils", Category.QOL) {
 
-    @Accordion(title = "Pay Confirm", category = "Pay Confirm", description = "Confirm big payments")
+    @Accordion(title = "Pay Confirm", category = "Pay Confirm", description = "Confirmation for big payments, quick pay")
     @Suppress("unused")
     private val payConfirm = PayConfirmConfig()
 
@@ -27,7 +27,7 @@ class MagicDonutConfig private constructor() :
     @Suppress("unused")
     private val overheadStats = OverheadStatsConfig()
 
-    @Accordion(title = "Auction", category = "Auction", description = "Hologram auctions. /bid start while holding an item.")
+    @Accordion(title = "Auction", category = "Auction", description = "Hologram auctions: /bid start while holding an item")
     @Suppress("unused")
     private val auction = AuctionConfig()
 
@@ -73,7 +73,11 @@ class MagicDonutConfig private constructor() :
     }
 
     companion object {
-        val instance: MagicDonutConfig by lazy { MagicDonutConfig() }
+        // Old sections are removed from the saved file first, so they don't show up as stray options.
+        val instance: MagicDonutConfig by lazy {
+            ConfigCleanup.run()
+            MagicDonutConfig()
+        }
 
         fun save() = instance.save()
     }

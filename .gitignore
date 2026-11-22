@@ -22,3 +22,6 @@ run/
 
 # macos
 *.DS_Store
+
+# local work log
+WORKLOG.md

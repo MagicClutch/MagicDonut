@@ -5,12 +5,12 @@ import org.polyfrost.oneconfig.api.config.v1.annotations.Slider
 import org.polyfrost.oneconfig.api.config.v1.annotations.Switch
 
 class OverheadStatsConfig {
-    @Switch(title = "Show stats", description = "Stats above player name tags. Needs an API key or a stats proxy.")
+    @Switch(title = "Overhead stats", description = "Stats above player name tags. Needs an API key or a stats proxy.")
     var enabled: Boolean = true
 
     // Global cap for overhead stats API usage.
     // This is used by the auto-refresh logic to scale refresh rate based on nearby player count.
-    @Slider(title = "Requests per minute", description = "Global cap for API requests. Lower it if you hit rate limits.", min = 1f, max = 250f, step = 1f)
+    @Slider(title = "Requests per minute", description = "Cap for API requests. Lower it if you hit rate limits.", min = 1f, max = 250f, step = 1f)
     var maxRequestsPerMinute: Int = 200
 
     @Dropdown(title = "Display mode", description = "One fixed stat, or cycle through all of them.")
@@ -29,7 +29,7 @@ class OverheadStatsConfig {
     var statYOffset: Float = 1.85f
 
     // Scale factor for the stat label text (1.0 = vanilla size).
-    @Slider(title = "Scale", description = "Text size relative to the vanilla name tag.", min = 0.2f, max = 2f, step = 0.05f)
+    @Slider(title = "Text size", description = "Relative to the vanilla name tag.", min = 0.2f, max = 2f, step = 0.05f)
     var statScale: Float = 0.5f
 
     init {

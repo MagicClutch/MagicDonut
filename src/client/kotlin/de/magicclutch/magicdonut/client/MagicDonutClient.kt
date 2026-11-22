@@ -3,15 +3,22 @@ package de.magicclutch.magicdonut.client
 import de.magicclutch.magicdonut.client.auction.AuctionCommand
 import de.magicclutch.magicdonut.client.auction.AuctionHologram
 import de.magicclutch.magicdonut.client.auction.AuctionManager
-import de.magicclutch.magicdonut.client.auction.AuctionRenderer
 import de.magicclutch.magicdonut.client.config.ConfigCommand
 import de.magicclutch.magicdonut.client.config.MagicDonutConfig
 import de.magicclutch.magicdonut.client.donation.DonationCommand
 import de.magicclutch.magicdonut.client.donation.DonationManager
+import de.magicclutch.magicdonut.client.earnings.EarningsTracker
+import de.magicclutch.magicdonut.client.hud.AuctionPanelHud
+import de.magicclutch.magicdonut.client.hud.EarningsStatsHud
 import de.magicclutch.magicdonut.client.hud.BalanceHud
+import de.magicclutch.magicdonut.client.hud.EarningsHud
+import de.magicclutch.magicdonut.client.hud.GoalHud
+import de.magicclutch.magicdonut.client.hud.InfoHud
+import de.magicclutch.magicdonut.client.profit.GoalTracker
 import de.magicclutch.magicdonut.client.hud.DonationHud
 import de.magicclutch.magicdonut.client.hud.ProfitHud
 import de.magicclutch.magicdonut.client.overheadstats.StatsRenderer
+import de.magicclutch.magicdonut.client.payment.PaymentListener
 import de.magicclutch.magicdonut.client.payconfirm.PayConfirmClient
 import de.magicclutch.magicdonut.client.profit.ProfitCommand
 import de.magicclutch.magicdonut.client.profit.ProfitTracker
@@ -46,16 +53,17 @@ class MagicDonutClient : ClientModInitializer {
             }
         }
 
-        ClientReceiveMessageEvents.GAME.register { message, _ ->
-            DonationManager.handleChatMessage(message)
-        }
+        // One place reads payments from the chat; everything else subscribes to it.
+        PaymentListener.init()
+        DonationManager.init()
 
         StatsRenderer.init()
         PayConfirmClient.init()
         DonationCommand.register()
-        HudManager.register(DonationHud(), BalanceHud(), ProfitHud())
+        HudManager.register(DonationHud(), BalanceHud(), ProfitHud(), EarningsHud(), GoalHud(), InfoHud(), EarningsStatsHud(), AuctionPanelHud())
+        EarningsTracker.init()
+        GoalTracker.init()
         AuctionManager.init()
-        AuctionRenderer.register()
         AuctionHologram.register()
         AuctionCommand.register()
         ProfitTracker.init()

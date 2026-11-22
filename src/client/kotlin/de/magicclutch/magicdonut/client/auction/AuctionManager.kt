@@ -30,6 +30,20 @@ object AuctionManager {
         @Volatile var endsAtMs: Long,
     ) {
         /** When the last bid added time, and how much, for the "+3s" effect. */
+        val startedAtMs: Long = System.currentTimeMillis()
+
+        /**
+         * Stream delay (0 to 60 s): when the timer hits 0 it is reset to this many seconds, so bids that reach
+         * viewers late still count. Applied again if a new top bid came in during the delay.
+         */
+        @Volatile var streamDelaySeconds: Int = 0
+        @Volatile var lastDelayAtMs: Long = 0L
+
+        /** The timer was reset by the stream delay and no new top bid has come in since: shows "Stream Delay +Ns". */
+        fun inStreamDelay(): Boolean = lastDelayAtMs > 0L && lastBidAtMs <= lastDelayAtMs && endsAtMs > System.currentTimeMillis()
+
+        /** When the last new top bid came in: the items spin once around after it. */
+        @Volatile var lastBidAtMs: Long = 0L
         @Volatile var lastBonusAtMs: Long = 0L
         @Volatile var lastBonusSeconds: Int = 0
 
@@ -48,6 +62,7 @@ object AuctionManager {
 
     /** How long a finished auction stays on screen. */
     private const val RESULT_VISIBLE_MS = 30_000L
+    const val MAX_STREAM_DELAY_SECONDS = 60
 
     @Volatile
     var current: Auction? = null
@@ -67,18 +82,53 @@ object AuctionManager {
 
     fun init() {
         ClientTickEvents.END_CLIENT_TICK.register { client ->
-            val auction = current ?: return@register
+            val auction = current ?: return@register.also { lastTickSecond = -1L }
+            if (client.level != null) tickSounds(auction)
             if (client.level == null) {
                 current = null
             } else if (System.currentTimeMillis() >= auction.endsAtMs) {
-                end()
+                // The timer hit 0: with a stream delay it restarts at that many seconds, once per round of bids.
+                val newBidSinceDelay = auction.lastDelayAtMs == 0L || auction.lastBidAtMs > auction.lastDelayAtMs
+                if (auction.streamDelaySeconds > 0 && newBidSinceDelay) {
+                    val now = System.currentTimeMillis()
+                    auction.lastDelayAtMs = now
+                    auction.endsAtMs = now + auction.streamDelaySeconds * 1000L
+                } else {
+                    end()
+                }
             }
         }
     }
 
+    private var lastTickSecond = -1L
+
+    /** A tick every second; from 10 down to 0 a "dim" every second, each one a step higher in pitch. */
+    private fun tickSounds(auction: Auction) {
+        if (!MagicDonutConfig.instance.auctionConfig.tickSounds) return
+        val seconds = auction.secondsLeft()
+        if (seconds == lastTickSecond) return
+        lastTickSecond = seconds
+        if (seconds > 10) {
+            play(AuctionSounds.TICK, 1.0f, MagicDonutConfig.instance.auctionConfig.tickVolume)
+        } else {
+            // 1.2 semitones per second: 10 -> 0 climbs exactly one octave (pitch 1.0 to 2.0).
+            val pitch = Math.pow(2.0, (10 - seconds) * 1.2 / 12.0).toFloat()
+            play(AuctionSounds.DIM, pitch)
+        }
+    }
+
+    private fun play(sound: net.minecraft.sounds.SoundEvent, pitch: Float, volume: Float = 0.8f) {
+        if (volume <= 0f) return
+        MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(sound, pitch, volume.coerceIn(0f, 1f)))
+    }
+
     fun start(item: ItemStack, seconds: Int, minimumBid: Long, anchor: Vec3?): Boolean {
         if (item.isEmpty || current != null) return false
-        current = Auction(item.copy(), minimumBid, System.currentTimeMillis() + seconds * 1000L).also { it.anchor = anchor }
+        val delay = MagicDonutConfig.instance.auctionConfig.streamDelaySeconds.coerceIn(0, MAX_STREAM_DELAY_SECONDS)
+        current = Auction(item.copy(), minimumBid, System.currentTimeMillis() + seconds * 1000L).also {
+            it.anchor = anchor
+            it.streamDelaySeconds = delay
+        }
         finished = null
         return true
     }
@@ -107,7 +157,8 @@ object AuctionManager {
         MinecraftClientService.sendChatMessage(message)
         if (winner != null) sendWinnerButtons(winner.player)
 
-        if (MagicDonutConfig.instance.auctionConfig.playEndSound) {
+        // The level-up jingle is the "won" sound, so it only plays when there is a winner.
+        if (winner != null && MagicDonutConfig.instance.auctionConfig.playEndSound) {
             MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.0f))
         }
         return auction
@@ -121,9 +172,9 @@ object AuctionManager {
         if (!safeName.matches(player)) return
         MinecraftClientService.sendChatMessage(
             Component.literal("[Auction] ").withStyle(ChatFormatting.GOLD)
-                .append(button("[Send Teleport Request]", ChatFormatting.AQUA, "/tpa $player"))
+                .append(button("[Teleport]", ChatFormatting.AQUA, "/tpa $player"))
                 .append(Component.literal("  "))
-                .append(button("[Open Orders]", ChatFormatting.YELLOW, "/orders $player"))
+                .append(button("[Orders]", ChatFormatting.YELLOW, "/orders $player"))
         )
     }
 
@@ -134,6 +185,13 @@ object AuctionManager {
                 .withClickEvent(ClickEvent.RunCommand(command))
                 .withHoverEvent(HoverEvent.ShowText(Component.literal(command).withStyle(color)))
         }
+
+    /** Sets the stream delay of the running auction (0 to 60 seconds): the timer restarts at this value when it hits 0. */
+    fun setStreamDelay(seconds: Int): Boolean {
+        val auction = current ?: return false
+        auction.streamDelaySeconds = seconds.coerceIn(0, MAX_STREAM_DELAY_SECONDS)
+        return true
+    }
 
     fun cancel(): Boolean {
         if (current == null) return false
@@ -148,7 +206,17 @@ object AuctionManager {
 
         val config = MagicDonutConfig.instance.auctionConfig
 
-        // Every valid payment buys a little more time (anti-sniping), with a small effect.
+        val previousTop = auction.highest
+        auction.bids += Bid(player, amount)
+        // Bids that don't beat the current top bid add no time and trigger no effect (stops $1, $2, ... spam).
+        if (previousTop != null && amount <= previousTop.amount) return
+
+        auction.lastBidAtMs = System.currentTimeMillis()
+
+        // The bell only rings for a bid above the current top bid, so $1 spam stays silent.
+        if (config.playBidSound) play(AuctionSounds.BELL, 1.0f, 0.4f)
+
+        // A new top bid buys a little more time (anti-sniping), with a small effect.
         val bonus = config.bidTimeBonusSeconds.coerceAtLeast(0)
         if (bonus > 0) {
             auction.endsAtMs += bonus * 1000L
@@ -156,10 +224,6 @@ object AuctionManager {
             auction.lastBonusSeconds = bonus
         }
         if (config.bidEffect) AuctionHologram.burst(auction)
-
-        val previousTop = auction.highest
-        auction.bids += Bid(player, amount)
-        if (previousTop != null && amount <= previousTop.amount) return
 
         MinecraftClientService.sendChatMessage(
             Component.literal("[Auction] ").withStyle(ChatFormatting.GOLD)
@@ -169,10 +233,6 @@ object AuctionManager {
                 .append(Component.literal(player).withStyle(ChatFormatting.GREEN))
         )
 
-        if (config.playBidSound) {
-            val client = MinecraftClientService.client
-            client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f))
-        }
     }
 }
 
