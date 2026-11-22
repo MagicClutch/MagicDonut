@@ -1,6 +1,6 @@
 # Changelog
 
-## 26.3.2
+## 1.4.3
 
 ### Auction
 - Cleaner Auction settings: only Duration, Extra time per top bid, Stream delay, Sound volume, Particle style, Particle color and Size are left.
@@ -9,7 +9,7 @@
 - Removed the Minimum bid setting. Set it with `/bid start` instead; without one it stays at 1k.
 - Fixed: the particles were far below the item and sank downwards. They now sit right under the item, so the item rests on them.
 
-## 26.3.1
+## 1.4.2
 
 ### Auction
 - Only a bid above the current top bid adds time, rings the bell and spins the item, so $1/$2 spam does nothing.
