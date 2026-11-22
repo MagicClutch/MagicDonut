@@ -59,8 +59,8 @@ object AuctionCommand {
         val source = context.source
         val config = MagicDonutConfig.instance.auctionConfig
 
-        // The command argument wins; otherwise the default from the settings (also written like "10k" or "2.5m").
-        val minBidInput = minBidText ?: config.defaultMinimumBid
+        // The minimum bid comes from the command (also written like "10k" or "2.5m"), otherwise 1k.
+        val minBidInput = minBidText ?: "1k"
         val minBid = AmountParser.parse(minBidInput) ?: run {
             error(source, "Unknown minimum bid: $minBidInput")
             return Command.SINGLE_SUCCESS

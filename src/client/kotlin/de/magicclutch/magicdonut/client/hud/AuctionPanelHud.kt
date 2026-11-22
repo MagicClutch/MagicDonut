@@ -236,7 +236,6 @@ class AuctionPanelHud : Hud("magicdonut_auction_panel", "Auction Panel", Categor
     override fun shouldShow(): Boolean {
         if (HudManager.isEditing) return true
         if (Minecraft.getInstance().level == null) return false
-        if (!MagicDonutConfig.instance.auctionConfig.enabled) return false
         return AuctionManager.current != null || AuctionManager.visibleFinished() != null
     }
 

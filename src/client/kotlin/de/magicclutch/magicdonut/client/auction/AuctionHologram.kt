@@ -14,6 +14,7 @@ import net.minecraft.core.particles.DustParticleOptions
 import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.network.chat.Component
+import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
@@ -33,6 +34,7 @@ object AuctionHologram {
     private const val BONUS_TEXT_MS = 1800L
     private const val RING_POINTS = 8
     private const val RING_RADIUS = 0.62
+    private const val PARTICLE_LIFETIME_TICKS = 6
 
     fun register() {
         LevelRenderEvents.COLLECT_SUBMITS.register { render(it) }
@@ -63,7 +65,6 @@ object AuctionHologram {
     private fun tickRing(mc: Minecraft) {
         val level = mc.level ?: return
         val config = MagicDonutConfig.instance.auctionConfig
-        if (!config.enabled || !config.glowRing) return
         val anchor = AuctionManager.current?.anchor ?: return
 
         val scale = config.scale.coerceIn(0.5f, 3f).toDouble()
@@ -71,10 +72,17 @@ object AuctionHologram {
         val phase = System.currentTimeMillis() / 1000.0
         val cx = anchor.x
         val cz = anchor.z
-        val base = anchor.y - 0.45 * scale      // the floor of the effect, below the item
+        // The floor of the effect sits right under the item, so the item rests on it. The item is drawn like a dropped
+        // item at 1.4x: a block's bottom is a bit above the anchor, a flat item reaches a bit below it.
+        val itemBottom = if (AuctionManager.current?.item?.item is BlockItem) 0.08 else -0.18
+        val base = anchor.y + (itemBottom - 0.06) * scale   // minus the bobbing
+        // Static styles are redrawn every tick, so their particles only live briefly; otherwise they sink (end rods
+        // have gravity) and leave a trail far below the item. Moving styles keep their normal lifetime.
+        val shortLived = config.particleStyle != AuctionConfig.ParticleStyle.FOUNTAIN
         var n = 0
         fun emit(x: Double, y: Double, z: Double, vx: Double = 0.0, vy: Double = 0.0, vz: Double = 0.0) {
-            level.addParticle(particleFor(config.particleColor, n++, phase), x, y, z, vx, vy, vz)
+            val particle = mc.particleEngine.createParticle(particleFor(config.particleColor, n++, phase), x, y, z, vx, vy, vz)
+            if (shortLived) particle?.setLifetime(PARTICLE_LIFETIME_TICKS)
         }
 
         when (config.particleStyle) {
@@ -147,8 +155,6 @@ object AuctionHologram {
 
     private fun render(context: LevelRenderContext) {
         val config = MagicDonutConfig.instance.auctionConfig
-        if (!config.enabled) return
-
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return
         if (mc.level == null) return
@@ -160,7 +166,7 @@ object AuctionHologram {
         val cameraPos = camera.pos
 
         val seconds = System.currentTimeMillis() / 1000.0
-        val bob = if (config.bobbingItem && running != null) sin(seconds * 2.0) * 0.06 else 0.0
+        val bob = if (running != null) sin(seconds * 2.0) * 0.06 else 0.0
         val scale = config.scale.coerceIn(0.5f, 3f)
 
         val pose = context.poseStack()
@@ -217,7 +223,7 @@ object AuctionHologram {
 
             // "+3s" floats up above the timer for a moment after every bid.
             val sinceBonus = System.currentTimeMillis() - auction.lastBonusAtMs
-            if (running != null && config.bidEffect && auction.lastBonusSeconds > 0 && sinceBonus in 0..BONUS_TEXT_MS) {
+            if (running != null && auction.lastBonusSeconds > 0 && sinceBonus in 0..BONUS_TEXT_MS) {
                 val rise = sinceBonus.toDouble() / BONUS_TEXT_MS
                 val bonusLine = Component.literal("+${auction.lastBonusSeconds}s").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
                 collector.submitNameTag(pose, Vec3(0.0, 1.7 + rise * 0.5, 0.0), 0, bonusLine, true, FULL_BRIGHT, camState)

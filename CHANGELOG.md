@@ -1,5 +1,14 @@
 # Changelog
 
+## 26.3.2
+
+### Auction
+- Cleaner Auction settings: only Duration, Extra time per top bid, Stream delay, Sound volume, Particle style, Particle color and Size are left.
+- New **Sound volume** slider for all auction sounds (tick, countdown, bid bell, winner jingle). 0 mutes them.
+- Countdown sounds, bid bell, winner jingle, hologram, bobbing, bid effect and particles are now always on.
+- Removed the Minimum bid setting. Set it with `/bid start` instead; without one it stays at 1k.
+- Fixed: the particles were far below the item and sank downwards. They now sit right under the item, so the item rests on them.
+
 ## 26.3.1
 
 ### Auction

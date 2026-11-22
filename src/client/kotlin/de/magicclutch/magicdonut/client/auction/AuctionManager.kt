@@ -64,6 +64,9 @@ object AuctionManager {
     private const val RESULT_VISIBLE_MS = 30_000L
     const val MAX_STREAM_DELAY_SECONDS = 60
 
+    /** The tick above 10 seconds is quieter than the countdown sounds. */
+    private const val TICK_VOLUME = 0.5f
+
     @Volatile
     var current: Auction? = null
         private set
@@ -104,12 +107,11 @@ object AuctionManager {
 
     /** A tick every second; from 10 down to 0 a "dim" every second, each one a step higher in pitch. */
     private fun tickSounds(auction: Auction) {
-        if (!MagicDonutConfig.instance.auctionConfig.tickSounds) return
         val seconds = auction.secondsLeft()
         if (seconds == lastTickSecond) return
         lastTickSecond = seconds
         if (seconds > 10) {
-            play(AuctionSounds.TICK, 1.0f, MagicDonutConfig.instance.auctionConfig.tickVolume)
+            play(AuctionSounds.TICK, 1.0f, TICK_VOLUME)
         } else {
             // 1.2 semitones per second: 10 -> 0 climbs exactly one octave (pitch 1.0 to 2.0).
             val pitch = Math.pow(2.0, (10 - seconds) * 1.2 / 12.0).toFloat()
@@ -117,9 +119,11 @@ object AuctionManager {
         }
     }
 
+    /** Plays a UI sound, scaled by the "Sound volume" setting. */
     private fun play(sound: net.minecraft.sounds.SoundEvent, pitch: Float, volume: Float = 0.8f) {
-        if (volume <= 0f) return
-        MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(sound, pitch, volume.coerceIn(0f, 1f)))
+        val scaled = volume * MagicDonutConfig.instance.auctionConfig.soundVolume.coerceIn(0f, 1f)
+        if (scaled <= 0f) return
+        MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(sound, pitch, scaled.coerceIn(0f, 1f)))
     }
 
     fun start(item: ItemStack, seconds: Int, minimumBid: Long, anchor: Vec3?): Boolean {
@@ -158,9 +162,7 @@ object AuctionManager {
         if (winner != null) sendWinnerButtons(winner.player)
 
         // The level-up jingle is the "won" sound, so it only plays when there is a winner.
-        if (winner != null && MagicDonutConfig.instance.auctionConfig.playEndSound) {
-            MinecraftClientService.client.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.0f))
-        }
+        if (winner != null) play(SoundEvents.PLAYER_LEVELUP, 1.0f, 1.0f)
         return auction
     }
 
@@ -214,7 +216,7 @@ object AuctionManager {
         auction.lastBidAtMs = System.currentTimeMillis()
 
         // The bell only rings for a bid above the current top bid, so $1 spam stays silent.
-        if (config.playBidSound) play(AuctionSounds.BELL, 1.0f, 0.4f)
+        play(AuctionSounds.BELL, 1.0f, 0.4f)
 
         // A new top bid buys a little more time (anti-sniping), with a small effect.
         val bonus = config.bidTimeBonusSeconds.coerceAtLeast(0)
@@ -223,7 +225,7 @@ object AuctionManager {
             auction.lastBonusAtMs = System.currentTimeMillis()
             auction.lastBonusSeconds = bonus
         }
-        if (config.bidEffect) AuctionHologram.burst(auction)
+        AuctionHologram.burst(auction)
 
         MinecraftClientService.sendChatMessage(
             Component.literal("[Auction] ").withStyle(ChatFormatting.GOLD)

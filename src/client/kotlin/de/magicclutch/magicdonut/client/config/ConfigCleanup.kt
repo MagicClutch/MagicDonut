@@ -13,7 +13,11 @@ object ConfigCleanup {
     private val removedSections = setOf("paymentToast", "paymentAnimation", "streamer", "gambler")
 
     /** Single options that no longer exist, as "section.option". */
-    private val removedOptions = setOf("auction.showHudPanel", "auction.x", "auction.y")
+    private val removedOptions = setOf(
+        "auction.showHudPanel", "auction.x", "auction.y",
+        "auction.defaultMinimumBid", "auction.tickSounds", "auction.tickVolume", "auction.playBidSound",
+        "auction.playEndSound", "auction.enabled", "auction.bobbingItem", "auction.bidEffect", "auction.glowRing",
+    )
 
     /** Saved HUDs of removed HUD types (folder name ends with the HUD id). */
     private val removedHudIds = listOf("magicdonut_payment_toasts", "magicdonut_gambler", "magicdonut_payment_banner")
